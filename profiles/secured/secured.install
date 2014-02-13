@@ -526,27 +526,6 @@ function secured_install() {
     ->execute();
   variable_set('admin_theme', 'seven');
   variable_set('node_admin_theme', '1');
-
-  //create default password policy this is not enabled and will need to be completed and enabled manually prior to use
-  $query = db_query("INSERT INTO {password_policy} (pid, name, expiration, warning) VALUES (1, 'default profile', 180, '15,5,1')");
-  if (is_array($passowrd_policy)) {
-    foreach ($password_policy as $password_policy) {
-      password_policy_save($passowrd_policy);
-    }
-  $query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)");
-    foreach ($password_policy_role as $password_policy_role) {
-      password_policy_role_save($password_policy_role);
-    }
-  }
-  // load the developer role and set it to the user admin role
-  $dev = user_role_load_by_name('developer');
-  //Set this as the developer role.
-  variable_set('user_admin_role', $dev->rid);
-
-// Assign user 1 the "developer" role.
-  db_insert('users_roles')
-    ->fields(array('uid' => 1, 'rid' => $dev->rid))
-    ->execute();
   //create report only content security policy manual setting required - add default, frame ancestor and uris.
   $query = db_query("INSERT INTO {content_security_policy} (pid, name, title, mode) VALUES (1, 'report-only', 'Report Only', '1')");
   if (is_array($content_security_policy)) {
@@ -572,6 +551,28 @@ function secured_install() {
     'textbook_templates'
   );
   features_revert($features);
+
+  module_enable(array('secured_permissions'));
+  //create default password policy this is not enabled and will need to be completed and enabled manually prior to use
+  $query = db_query("INSERT INTO {password_policy} (pid, name, expiration, warning) VALUES (1, 'default profile', 180, '15,5,1')");
+  if (is_array($password_policy)) {
+    foreach ($password_policy as $password_policy) {
+      password_policy_save($passowrd_policy);
+    }
+  $query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)");
+    foreach ($password_policy_role as $password_policy_role) {
+      password_policy_role_save($password_policy_role);
+    }
+  }
+  // load the developer role and set it to the user admin role
+  $dev = user_role_load_by_name('developer');
+  //Set this as the developer role.
+  variable_set('user_admin_role', $dev->rid);
+
+// Assign user 1 the "developer" role.
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $dev->rid))
+    ->execute();
   // ignore any rebuild messages
   node_access_needs_rebuild(FALSE);
   // ignore any other install messages
