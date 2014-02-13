@@ -12,7 +12,7 @@
  * @see system_install()
  */
 function secured_install() {
-// Enable the default theme.
+  // Enable the default theme.
   db_update('system')
     ->fields(array('status' => 1))
     ->condition('type', 'theme')
@@ -120,7 +120,7 @@ function secured_install() {
   $full_html_format = (object) $full_html_format;
   filter_format_save($full_html_format);
 
-// Enable some standard blocks.
+  // Enable some standard blocks.
   $default_theme = variable_get('theme_default', 'ghp_bootstrap');
   $admin_theme = 'seven';
   $blocks = array(
@@ -220,63 +220,63 @@ function secured_install() {
     $query->values($block);
   }
   $query->execute();
-//Set jquery version and cdn
+  // Set jquery version and cdn
   variable_set('jquery_update_jquery_version', '1.7');
   variable_set('jquery_update_jquery_cdn', 'jquery');
   variable_set('jquery_update_compression_type', 'none');
-//User Settings
-// Limit account creation to administrators only.
+  // User Settings
+  // Limit account creation to administrators only.
   variable_set('user_register', USER_REGISTER_ADMINISTRATORS_ONLY);
 
-//Turn off user contact form by default
+  // Turn off user contact form by default
   variable_set('contact_default_status', '0');
-  //Change anonymous user namem to Guest
+  // Change anonymous user namem to Guest
   variable_set('anonymous', 'Guest');
-  //Turn off email verification
+  // Turn off email verification
   variable_set('user_email_verification', '0');
-//Set generate password characters
+  // Set generate password characters
   variable_set('genpass_length', '14');
 
-//Set auto password generation in password handling
+  // Set auto password generation in password handling
   variable_set('genpass_mode', '2');
   variable_set('genpass_display', '1');
-//Auto Logout
-// Set auto logout inactivity time
+  //Auto Logout
+  // Set auto logout inactivity time
   variable_set('autologout_timeout', '1800');
-// Set auto logout max threshold
+  // Set auto logout max threshold
   variable_set('autologout_max_timeout', '1800');
-// Set auto logout padding
+  // Set auto logout padding
   variable_set('autologout_padding', '30');
-// Turn on auto logout logging in watchdog
+  // Turn on auto logout logging in watchdog
   variable_set('autologout_use_watchdog', '1');
-//Login Security
-//Set login security time track to 24 hours. There are manual settings in loginsecurity?
+  //Login Security
+  //Set login security time track to 24 hours. There are manual settings in loginsecurity?
     variable_set('login_security_track_time', '2');
- //Set the Max # of login attempts before blocking a user
+  //Set the Max # of login attempts before blocking a user
   variable_set('login_security_user_wrong_count', '20');
- //Set the Max # of log in attempts before soft blocking a host
+  //Set the Max # of log in attempts before soft blocking a host
   variable_set('login_security_host_wrong_count', '30');
 
- //Set the Max # of log in attempts before hard blocking a host
+  //Set the Max # of log in attempts before hard blocking a host
   variable_set('login_security_host_wrong_count_hard', '50');
 
-//Set Maximum number of login failures before detecting an ongoing attack
+  //Set Maximum number of login failures before detecting an ongoing attack
   variable_set('login_security_activity_threshold', '51');
 
-//Disable login failure message
+  //Disable login failure message
   variable_set('login_security_disable_core_login_error', '1');
 
  //Password Policy
  //Set the login expiration in password policy to allow users to change not just block
   variable_set('password_policy_block', '1');
-//Set error not to display
+  //Set error not to display
   variable_set('error_level', '0');
 
-//Session Limits
-//Set session limit to log out old session
+  //Session Limits
+  //Set session limit to log out old session
   variable_set('session_limit_behaviour', '1');
   variable_Set('session_limit_masquerade_ignore', '1');
-//Honey pot
+  //Honey pot
   variable_set('honeypot_protect_all_forms', '0');
   variable_set('honeypot_log', '1');
   variable_set('honeypot_form_user_register_form', '1');
@@ -437,7 +437,8 @@ function secured_install() {
   field_create_instance($instance);
 
   // Create an image field named "Image", enabled for the 'article' content type.
-  // Many of the following values will be defaulted, they're included here as an illustrative examples.
+  // Many of the following values will be defaulted
+  // they're included here as an illustrative examples.
   // See http://api.drupal.org/api/function/field_create_field/7
 
   $field = array(
@@ -456,7 +457,6 @@ function secured_install() {
     ),
   );
   field_create_field($field);
-
 
   // Many of the following values will be defaulted, they're included here as an illustrative examples.
   // See http://api.drupal.org/api/function/field_create_instance/7
@@ -504,10 +504,10 @@ function secured_install() {
   );
   field_create_instance($instance);
 
-//Enforce rev log
+  //Enforce rev log
   variable_set('enforce_revlog_node_type_page', '1');
 
-// Create a Home link in the main menu.
+  // Create a Home link in the main menu.
   $item = array(
     'link_title' => st('Home'),
     'link_path' => '<front>',
@@ -515,10 +515,10 @@ function secured_install() {
   );
   menu_link_save($item);
 
-// Update the menu router information.
+  // Update the menu router information.
   menu_rebuild();
 
-// Enable the admin theme.
+  // Enable the admin theme.
   db_update('system')
     ->fields(array('status' => 1))
     ->condition('type', 'theme')
@@ -527,71 +527,26 @@ function secured_install() {
   variable_set('admin_theme', 'seven');
   variable_set('node_admin_theme', '1');
 
-
-//create default password policy this is not enabled and will need to be completed and enabled manually prior to use
-$query = db_query("INSERT INTO {password_policy} (pid, name, expiration, warning) VALUES (1, 'default profile', 180, '15,5,1')");
-if (is_array($passowrd_policy))
-    {
+  //create default password policy this is not enabled and will need to be completed and enabled manually prior to use
+  $query = db_query("INSERT INTO {password_policy} (pid, name, expiration, warning) VALUES (1, 'default profile', 180, '15,5,1')");
+  if (is_array($passowrd_policy)) {
     foreach ($password_policy as $password_policy) {
       password_policy_save($passowrd_policy);
     }
-
-$query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)");
+  $query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)");
     foreach ($password_policy_role as $password_policy_role) {
       password_policy_role_save($password_policy_role);
     }
-    }
-// Create a default role for site developer, with all available permissions assigned.
-  $admin_role = new stdClass();
-  $admin_role->name = 'developer';
-  $admin_role->weight = 6;
-  user_role_save($admin_role);
-  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
-
-//Set this as the developer role.
-  variable_set('user_admin_role', $admin_role->rid);
+  }
+  // load the developer role and set it to the user admin role
+  $dev = user_role_load_by_name('developer');
+  //Set this as the developer role.
+  variable_set('user_admin_role', $dev->rid);
 
 // Assign user 1 the "developer" role.
   db_insert('users_roles')
-    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+    ->fields(array('uid' => 1, 'rid' => $dev->rid))
     ->execute();
-
-//Set up default role permissions
-// Assign anonymous user permissions
-  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access content', 'access site map', 'access site-wide contact form', 'search content', 'use exclude node title', 'access comments'));
-// Assign authenticated role permissions
-  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access content', 'access site map', 'access site-wide contact form', 'search content', 'use exclude node title', 'use text format filtered_html', 'access comments', 'edit own comments'));
-
-  // Create a default role for site administrators, with all available permissions assigned.
-  $admin_role = new stdClass();
-  $admin_role->name = 'administrator';
-  $admin_role->weight = 7;
-  user_role_save($admin_role);
-  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
-  // Set this as the administrator role.
-  variable_set('user_admin_role', $admin_role->rid);
-
-// Add a 'editor' role
-  $query = db_query("INSERT INTO {role} (rid, name, weight) VALUES (5, 'editor', 4)");
-  if (is_array($role))
-    {
-    foreach ($role as $role) {
-      $query->values($role);
-    }
-  }
-  // Assign editor permissions
-  user_role_grant_permissions('5', array('access administration pages', 'access ckeditor link', 'access content overview', 'access contextual links', 'access dashboard', 'access toolbar', 'access user contact forms', 'access user profiles', 'bypass honeypot protection', 'delete revisions', 'edit meta tags', 'edit revisions', 'exclude any node title', 'exclude own node title', 'publish revisions', 'revert revisions', 'show format tips', 'show more format tips link', 'unpublish current revision', 'view diffs of changed files', 'view own unpublished content', 'view post access counter', 'view revision status messages', 'view revisions', 'create page content', 'delete any page content', 'delete own page content', 'edit any landing_page content', 'edit any page content', 'edit own page content', 'use text format filtered_html', 'access comments', 'edit own comments', 'administer comments', 'skip comment approval', 'access dashboard'));
-
-  // Add a 'contributor' role
-  $query = db_query("INSERT INTO {role} (rid, name, weight) VALUES (6, 'contributor', 3)");
-  if (is_array($role))
-    {
-    foreach ($role as $role) {
-      $query->values($role);
-    }
-  }
-  // Assign contributor permissions
-  user_role_grant_permissions('6', array('use advanced search', 'access ckeditor link', 'access dashboard', 'access toolbar', 'access user contact forms', 'access user profiles', 'bypass honeypot protection', 'edit meta tags', 'show format tips', 'view own unpublished content', 'view revision status messages', 'view revisions', 'create page content', 'edit own page content', 'use text format filtered_html', 'access comments', 'edit own comments','skip comment approval', 'access dashboard'));
   //create report only content security policy manual setting required - add default, frame ancestor and uris.
   $query = db_query("INSERT INTO {content_security_policy} (pid, name, title, mode) VALUES (1, 'report-only', 'Report Only', '1')");
   if (is_array($content_security_policy)) {
@@ -609,8 +564,6 @@ $query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)")
     }
   }
 
-  // Update the menu router information.
-  menu_rebuild();
   // revert features to ensure they are all installed
   $features = array(
     'custom_content_types',
