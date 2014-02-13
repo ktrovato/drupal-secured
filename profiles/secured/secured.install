@@ -1,0 +1,638 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the standard installation profile.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ *
+ * @see system_install()
+ */
+
+
+function secured_install() {
+  
+// Enable the default theme.
+  db_update('system')
+    ->fields(array('status' => 1))
+    ->condition('type', 'theme')
+    ->condition('name', 'ghp_bootstrap')
+    ->execute();
+  variable_set('theme_default', 'custom_bootstrap');
+  
+  // Add text formats.
+  $filtered_html_format = array(
+    'format' => 'filtered_html',
+    'name' => 'Filtered HTML',
+    'weight' => -1,
+    'filters' => array(
+      // URL filter.
+      'filter_url' => array(
+        'weight' => 0,
+        'status' => 1,
+      ),
+      // HTML filter.
+      'filter_html' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Line break filter.
+      'filter_autop' => array(
+        'weight' => 2,
+        'status' => 1,
+      ),
+      // HTML corrector filter.
+      'filter_htmlcorrector' => array(
+        'weight' => 10,
+        'status' => 1,
+      ),
+      // CKEditor Links.
+      'ckeditor_link_filter' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on rel to absolute filter.
+      'rel_to_abs' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on transliteration filter.
+      'transliteration' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on pathologic filter.
+      'pathologic' => array(
+        'weight' => 2,
+        'status' => 1,
+      ),
+      // Turn on html purifier filter.
+      'htmlpurifier_basic' => array(
+        'weight' => -1,
+        'status' => 1,
+      ),
+    ),
+  );
+  $filtered_html_format = (object) $filtered_html_format;
+  filter_format_save($filtered_html_format);
+
+  $full_html_format = array(
+    'format' => 'full_html',
+    'name' => 'Full HTML',
+    'weight' => -2,
+    'filters' => array(
+      // URL filter.
+      'filter_url' => array(
+        'weight' => 0,
+        'status' => 1,
+      ),
+      // Line break filter.
+      'filter_autop' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // HTML corrector filter.
+      'filter_htmlcorrector' => array(
+        'weight' => 10,
+        'status' => 1,
+      ),
+      // CKEditor Links.
+      'ckeditor_link_filter' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on rel to absolute filter.
+      'rel_to_abs' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on transliteration filter.
+      'transliteration' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Turn on pathologic filter.
+      'pathologic' => array(
+        'weight' => 2,
+        'status' => 1,
+      ),
+    ),
+  );
+  $full_html_format = (object) $full_html_format;
+  filter_format_save($full_html_format);
+
+// Enable some standard blocks.
+  $default_theme = variable_get('theme_default', 'ghp_bootstrap');
+  $admin_theme = 'seven';
+  $blocks = array(
+    array(
+      'module' => 'system',
+      'delta' => 'main',
+      'theme' => $default_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'content',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'node',
+      'delta' => 'recent',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 10,
+      'region' => 'dashboard_main',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'system',
+      'delta' => 'help',
+      'theme' => $default_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'help',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'menu',
+      'delta' => 'devel',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'dashboard_sidebar',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'system',
+      'delta' => 'main',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'content',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'system',
+      'delta' => 'help',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'help',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'user',
+      'delta' => 'login',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 10,
+      'region' => 'content',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'user',
+      'delta' => 'new',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'dashboard_sidebar',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'search',
+      'delta' => 'form',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => -10,
+      'region' => 'dashboard_sidebar',
+      'pages' => '',
+      'cache' => -1,
+    ),
+  );
+  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
+  foreach ($blocks as $block) {
+    $query->values($block);
+  }
+  $query->execute();
+  
+//Set jquery version and cdn
+   variable_set('jquery_update_jquery_version', '1.7');
+   variable_set('jquery_update_jquery_cdn', 'jquery');
+   variable_set('jquery_update_compression_type', 'none');
+   
+//User Settings
+// Limit account creation to administrators only.
+  variable_set('user_register', USER_REGISTER_ADMINISTRATORS_ONLY);
+
+//Turn off user contact form by default
+	variable_set('contact_default_status', '0');
+
+//Change anonymous user namem to Guest
+		variable_set('anonymous', 'Guest');
+ //Turn off email verification  
+  variable_set('user_email_verification', '0');
+  
+//Set generate password characters
+	variable_set('genpass_length', '14');
+
+//Set auto password generation in password handling  
+    variable_set('genpass_mode', '2');
+	variable_set('genpass_display', '1');
+	
+//Auto Logout
+// Set auto logout inactivity time
+    variable_set('autologout_timeout', '1800');
+// Set auto logout max threshold
+	variable_set('autologout_max_timeout', '1800');
+// Set auto logout padding
+	variable_set('autologout_padding', '30');
+// Turn on auto logout logging in watchdog
+	variable_set('autologout_use_watchdog', '1');
+	
+//Login Security
+//Set login security time track to 24 hours. There are manual settings in loginsecurity?  
+    variable_set('login_security_track_time', '2');
+    
+ //Set the Max # of login attempts before blocking a user
+	variable_set('login_security_user_wrong_count', '20');
+	
+ //Set the Max # of log in attempts before soft blocking a host
+	variable_set('login_security_host_wrong_count', '30');
+
+ //Set the Max # of log in attempts before hard blocking a host	
+	variable_set('login_security_host_wrong_count_hard', '50');
+
+//Set Maximum number of login failures before detecting an ongoing attack	
+	variable_set('login_security_activity_threshold', '51');
+
+//Disable login failure message
+	variable_set('login_security_disable_core_login_error', '1');
+ 
+ //Password Policy
+ //Set the login expiration in password policy to allow users to change not just block   
+	variable_set('password_policy_block', '1');
+//Set error not to display	
+	variable_set('error_level', '0');
+
+//Session Limits	
+//Set session limit to log out old session
+	variable_set('session_limit_behaviour', '1');
+	variable_Set('session_limit_masquerade_ignore', '1');
+	
+//Honey pot
+	variable_set('honeypot_protect_all_forms', '0');
+	variable_set('honeypot_log', '1');
+	variable_set('honeypot_form_user_register_form', '1');
+	variable_set('honeypot_form_user_pass', '1');
+	variable_set('honeypot_form_contact_site_form', '1');
+	variable_set('honeypot_form_contact_personal_form', '1');
+	variable_set('honeypot_form_webforms', '1');
+
+//Set filesystem paths
+	variable_set('file_private_path', '../priv');
+	variable_set('file_temporary_path', '../tmp');
+	
+//IMCE Settings
+	variable_set('imce_settings_replace', '1');
+
+//Performance Settings
+	variable_set('cache', '1');
+	variable_set('block_cache', '1');
+	variable_set('preprocess_css', '1');
+	variable_set('preprocess_js', '1');
+	variable_set('page_compression', '1');
+
+//AdvAgg settings
+	variable_set('advagg_combine_css_media', '1');
+	variable_set('advagg_ie_css_selector_limiter', '1');
+	variable_set('advagg_combine_css_media', '1');
+	variable_set('advagg_combine_css_media', '1');
+  
+// Insert default pre-defined node types into the database. For a complete
+// list of available node type attributes, refer to the node type API
+// documentation at: http://api.drupal.org/api/HEAD/function/hook_node_info.
+  $types = array(
+    array(
+      'type' => 'page',
+      'name' => st('Basic page'),
+      'base' => 'node_content',
+      'description' => st("Use <em>basic pages</em> for your static content, such as an 'About us' page."),
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 0,
+    ),
+    array(
+      'type' => 'article',
+      'name' => st('Article'),
+      'base' => 'node_content',
+      'description' => st('Use <em>articles</em> for time-sensitive content like news, press releases or blog posts.'),
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 0,
+    ),
+  );
+
+  foreach ($types as $type) {
+    $type = node_type_set_defaults($type);
+    node_type_save($type);
+    node_add_body_field($type);
+  }
+
+  // Insert default pre-defined RDF mapping into the database.
+  $rdf_mappings = array(
+    array(
+      'type' => 'node',
+      'bundle' => 'page',
+      'mapping' => array(
+        'rdftype' => array('foaf:Document'),
+      ),
+    ),
+    array(
+      'type' => 'node',
+      'bundle' => 'article',
+      'mapping' => array(
+        'field_image' => array(
+          'predicates' => array('og:image', 'rdfs:seeAlso'),
+          'type' => 'rel',
+        ),
+        'field_tags' => array(
+          'predicates' => array('dc:subject'),
+          'type' => 'rel',
+        ),
+      ),
+    ),
+  );
+  foreach ($rdf_mappings as $rdf_mapping) {
+    rdf_mapping_save($rdf_mapping);
+  }
+
+  
+// Default "Basic page" to not be promoted and have comments disabled.
+  variable_set('node_options_page', array('status'));
+  variable_set('comment_page', COMMENT_NODE_HIDDEN);
+  
+// Default "Basic page" to not be promoted and have comments disabled.
+  variable_set('node_options_page', array('status'));
+  variable_set('comment_page', COMMENT_NODE_OPEN);
+  
+// Default "Landing page" to not be promoted and have comments disabled.
+  variable_set('node_options_landing_page', array('status'));
+  variable_set('comment_landing_page', COMMENT_NODE_HIDDEN);
+  
+// Default "Section page" to not be promoted and have comments disabled.
+  variable_set('node_options_section_page', array('status'));
+  variable_set('comment_section_page', COMMENT_NODE_HIDDEN);
+
+// Don't display date and author information for "Basic page" nodes by default.
+  variable_set('node_submitted_page', FALSE);
+  
+  // Don't display date and author information for "Article" nodes by default.
+  variable_set('node_submitted_article', FALSE);
+
+// Don't display date and author information for "Landing page" nodes by default.
+  variable_set('node_submitted_landing_page', FALSE);
+  
+// Don't display date and author information for "Section page" nodes by default.
+  variable_set('node_submitted_section_page', FALSE);
+
+ // Create a default vocabulary named "Tags", enabled for the 'article' content type.
+  $description = st('Use tags to group articles on similar topics into categories.');
+  $vocabulary = (object) array(
+    'name' => st('Tags'),
+    'description' => $description,
+    'machine_name' => 'tags',
+  );
+  taxonomy_vocabulary_save($vocabulary);
+
+  $field = array(
+    'field_name' => 'field_' . $vocabulary->machine_name,
+    'type' => 'taxonomy_term_reference',
+    // Set cardinality to unlimited for tagging.
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+    'settings' => array(
+      'allowed_values' => array(
+        array(
+          'vocabulary' => $vocabulary->machine_name,
+          'parent' => 0,
+        ),
+      ),
+    ),
+  );
+  field_create_field($field);
+
+  $help = st('Enter a comma-separated list of words to describe your content.');
+  $instance = array(
+    'field_name' => 'field_' . $vocabulary->machine_name,
+    'entity_type' => 'node',
+    'label' => 'Tags',
+    'bundle' => 'article',
+    'description' => $help,
+    'widget' => array(
+      'type' => 'taxonomy_autocomplete',
+      'weight' => -4,
+    ),
+    'display' => array(
+      'default' => array(
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 10,
+      ),
+      'teaser' => array(
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 10,
+      ),
+    ),
+  );
+  field_create_instance($instance);
+
+
+  // Create an image field named "Image", enabled for the 'article' content type.
+  // Many of the following values will be defaulted, they're included here as an illustrative examples.
+  // See http://api.drupal.org/api/function/field_create_field/7
+
+  $field = array(
+    'field_name' => 'field_image',
+    'type' => 'image',
+    'cardinality' => 1,
+    'locked' => FALSE,
+    'indexes' => array('fid' => array('fid')),
+    'settings' => array(
+      'uri_scheme' => 'public',
+      'default_image' => FALSE,
+    ),
+    'storage' => array(
+      'type' => 'field_sql_storage',
+      'settings' => array(),
+    ),
+  );
+  field_create_field($field);
+
+
+  // Many of the following values will be defaulted, they're included here as an illustrative examples.
+  // See http://api.drupal.org/api/function/field_create_instance/7
+  $instance = array(
+    'field_name' => 'field_image',
+    'entity_type' => 'node',
+    'label' => 'Image',
+    'bundle' => 'article',
+    'description' => st('Upload an image to go with this article.'),
+    'required' => FALSE,
+
+    'settings' => array(
+      'file_directory' => 'field/image',
+      'file_extensions' => 'png gif jpg jpeg',
+      'max_filesize' => '',
+      'max_resolution' => '',
+      'min_resolution' => '',
+      'alt_field' => TRUE,
+      'title_field' => '',
+    ),
+
+    'widget' => array(
+      'type' => 'image_image',
+      'settings' => array(
+        'progress_indicator' => 'throbber',
+        'preview_image_style' => 'thumbnail',
+      ),
+      'weight' => -1,
+    ),
+
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'type' => 'image',
+        'settings' => array('image_style' => 'large', 'image_link' => ''),
+        'weight' => -1,
+      ),
+      'teaser' => array(
+        'label' => 'hidden',
+        'type' => 'image',
+        'settings' => array('image_style' => 'medium', 'image_link' => 'content'),
+        'weight' => -1,
+      ),
+    ),
+  );
+  field_create_instance($instance);
+
+//Enforce rev log
+	variable_set('enforce_revlog_node_type_page', '1');
+  
+// Create a Home link in the main menu.
+  $item = array(
+    'link_title' => st('Home'),
+    'link_path' => '<front>',
+    'menu_name' => 'main-menu',
+  );
+  menu_link_save($item);
+
+// Update the menu router information.
+  menu_rebuild();
+
+// Enable the admin theme.
+  db_update('system')
+    ->fields(array('status' => 1))
+    ->condition('type', 'theme')
+    ->condition('name', 'seven')
+    ->execute();
+  variable_set('admin_theme', 'seven');
+  variable_set('node_admin_theme', '1');
+  
+
+//create default password policy this is not enabled and will need to be completed and enabled manually prior to use
+$query = db_query("INSERT INTO {password_policy} (pid, name, expiration, warning) VALUES (1, 'default profile', 180, '15,5,1')");
+if (is_array($passowrd_policy))
+    {
+		foreach ($password_policy as $password_policy) {
+			password_policy_save($passowrd_policy);
+		}
+
+$query = db_query("INSERT INTO {password_policy_role} (pid, rid) VALUES (1, 2)");
+		foreach ($password_policy_role as $password_policy_role) {
+			password_policy_role_save($password_policy_role);
+		}
+    }
+// Create a default role for site developer, with all available permissions assigned.
+  $admin_role = new stdClass();
+  $admin_role->name = 'developer';
+  $admin_role->weight = 6;
+  user_role_save($admin_role);
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+
+//Set this as the developer role.
+  variable_set('user_admin_role', $admin_role->rid);
+
+// Assign user 1 the "developer" role.
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+    ->execute();
+
+//Set up default role permissions
+// Assign anonymous user permissions
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access content', 'access site map', 'access site-wide contact form', 'search content', 'use exclude node title', 'access comments'));
+// Assign authenticated role permissions
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access content', 'access site map', 'access site-wide contact form', 'search content', 'use exclude node title', 'use text format filtered_html', 'access comments', 'edit own comments'));
+
+//Add custom user roles
+// Add a 'administrator' role
+  $query = db_query("INSERT INTO {role} (rid, name, weight) VALUES (4, 'administrator', 5)");
+if (is_array($role))
+    {
+	  foreach ($role as $role) {
+	    $query->values($role);
+		}
+	}
+// Assign administrator permissions
+  user_role_grant_permissions('4', array('access administration pages', 'access backup and migrate', 'access backup files', 'access ckeditor link', 'access content overview', 'access contextual links', 'access dashboard', 'access security review list', 'access site reports', 'access statistics', 'access system information', 'access toolbar', 'access user contact forms', 'access user profiles', 'block IP addresses', 'bypass honeypot protection', 'cancel account', 'exclude any node title', 'exclude own node title', 'force password change', 'perform backup', 'run security checks', 'show format selection for node', 'show format tips', 'show more format tips link', 'unblock expired accounts', 'view own unpublished content', 'view post access counter', 'view revision status messages', 'view the administration theme', 'create landing_page content', 'create page content', 'delete any page content', 'delete own landing_page content', 'delete own page content', 'edit any landing_page content', 'edit any page content', 'edit own landing_page content', 'edit own page content', 'administer taxonomy', 'use text format filtered_html', 'use text format full_html','access comments', 'edit own comments', 'administer comments', 'skip comment approval', 'access dashboard'));	
+	
+// Add a 'editor' role
+  $query = db_query("INSERT INTO {role} (rid, name, weight) VALUES (5, 'editor', 4)");
+if (is_array($role))
+    {
+	  foreach ($role as $role) {
+	    $query->values($role);
+		}
+	}
+// Assign editor permissions
+  user_role_grant_permissions('5', array('access administration pages', 'access ckeditor link', 'access content overview', 'access contextual links', 'access dashboard', 'access toolbar', 'access user contact forms', 'access user profiles', 'bypass honeypot protection', 'delete revisions', 'edit meta tags', 'edit revisions', 'exclude any node title', 'exclude own node title', 'publish revisions', 'revert revisions', 'show format tips', 'show more format tips link', 'unpublish current revision', 'view diffs of changed files', 'view own unpublished content', 'view post access counter', 'view revision status messages', 'view revisions', 'create page content', 'delete any page content', 'delete own page content', 'edit any landing_page content', 'edit any page content', 'edit own page content', 'use text format filtered_html', 'access comments', 'edit own comments', 'administer comments', 'skip comment approval', 'access dashboard'));	
+
+// Add a 'contributor' role
+  $query = db_query("INSERT INTO {role} (rid, name, weight) VALUES (6, 'contributor', 3)");
+if (is_array($role))
+    {
+	  foreach ($role as $role) {
+	    $query->values($role);
+		}
+	}
+// Assign contributor permissions
+  user_role_grant_permissions('6', array('use advanced search', 'access ckeditor link', 'access dashboard', 'access toolbar', 'access user contact forms', 'access user profiles', 'bypass honeypot protection', 'edit meta tags', 'show format tips', 'view own unpublished content', 'view revision status messages', 'view revisions', 'create page content', 'edit own page content', 'use text format filtered_html', 'access comments', 'edit own comments','skip comment approval', 'access dashboard'));
+
+//create report only content security policy manual setting required - add default, frame ancestor and uris.
+$query = db_query("INSERT INTO {content_security_policy} (pid, name, title, mode) VALUES (1, 'report-only', 'Report Only', '1')");
+if (is_array($content_security_policy)) {
+		foreach ($content_security_policy as $content_security_policy) {
+			content_security_policy_save($content_security_policy);
+		}
+    }
+
+//create backup schedules includes development and production. Dev can be turned off at launch or shortly there after as needed.
+$query = db_query("INSERT INTO {backup_migrate_schedules} (`schedule_id`, `name`, `source_id`, `destination_id`, `profile_id`, `keep`, `period`, `enabled`, `cron`) VALUES
+('3eb4108e6f48f7385e74ab84328a8723', 'Productions Schedule', 'db', 'scheduled', 'default', 60, 86400, 1, 0),
+('734e4812a81ef3b9901ec09ccaa629a0', 'Development Schedule', 'db', 'scheduled', 'default', 48, 3600, 1, 0)");
+if (is_array($backup_migrate_schedules)) {
+		foreach ($backup_migrate_schedules as $backup_migrate_schedules) {
+			backup_migrate_schedules_save($backup_migrate_schedules);
+		}
+    }
+    
+}
+
+

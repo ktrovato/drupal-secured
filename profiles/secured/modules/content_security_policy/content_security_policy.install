@@ -1,0 +1,53 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function content_security_policy_schema() {
+  return array(
+    'content_security_policy' => array(
+      'fields' => array(
+        'pid' => array(
+          'description' => 'Primary Key: a unique policy id for this content security policy.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'name' => array(
+          'description' => 'A unique machine name for this content security policy.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+        'title' => array(
+          'description' => 'The human-readable name of this policy.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'description' => array(
+          'description' => 'A description of this content security policy.',
+          'type' => 'text',
+          'not null' => FALSE,
+        ),
+        'mode' => array(
+          'description' => 'This content security policy\'s operation mode.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+          'default' => 0,
+        ),        
+        'data' => array(
+          'description' => 'The actual policy as a serialized array.',
+          'type' => 'text',
+          'not null' => FALSE,
+          'serialize' => TRUE,
+        ),
+      ),
+      'primary key' => array('pid'),
+      'unique keys' => array(
+        'name' => array('name'),
+      ),
+    ),
+  );
+}

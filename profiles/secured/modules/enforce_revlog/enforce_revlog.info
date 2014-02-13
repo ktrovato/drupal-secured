@@ -1,0 +1,13 @@
+name = Enforce revlog
+description = Enforce log messages for every revision
+core = 7.x
+package = User interface
+
+files[] = enforce_revlog.install
+
+; Information added by drupal.org packaging script on 2012-04-16
+version = "7.x-1.2"
+core = "7.x"
+project = "enforce_revlog"
+datestamp = "1334612798"
+

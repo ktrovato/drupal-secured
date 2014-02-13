@@ -1,0 +1,168 @@
+<?php
+
+/**
+ * @file
+ * This module displays information about the current state of the Drupal
+ * installation and system environment.
+ */
+
+
+/**
+ * Implements hook_help().
+ */
+function systeminfo_help($path, $arg) {
+
+  switch ($path) {
+
+    case 'admin/help#systeminfo':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('This module displays information about the current state of the Drupal installation and system environment. For more information, see the online handbook entry for <a href="@systeminfo">System Information module</a>.', array('@systeminfo' => 'http://drupal.org/project/systeminfo')) . '</p>';
+      return $output;
+
+    case 'admin/reports/systeminfo':
+      $output = '<p>' . t('Information about the current state of the Drupal installation and system environment.') . '</p>';
+      return $output;
+
+    case 'admin/reports/systeminfo/drupal':
+      $output = '<p>' . t('Information about the current state of the Drupal installation.') . '</p>';
+      return $output;
+
+    case 'admin/reports/systeminfo/php':
+      $output = '<p>' . t('Information about the current state of PHP.') . '</p>';
+      return $output;
+
+    case 'admin/reports/systeminfo/database':
+      $output = '<p>' . t('Information about the current state of the database system.') . '</p>';
+      return $output;
+  }
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function systeminfo_permission() {
+
+  $perm = array();
+  $perm['access system information'] = array(
+    'title' => t('Access system information'),
+  );
+  $perm['administer system information'] = array(
+    'title' => t('Administer system information'),
+  );
+
+  return $perm;
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function systeminfo_menu() {
+
+  $menu = array();
+  $menu['admin/reports/systeminfo'] = array(
+    'title' => 'System information',
+    'description' => 'View current state of the Drupal installation and system environment.',
+    'page callback' => 'systeminfo_admin_overview',
+    'access arguments' => array('access system information'),
+    'file' => 'systeminfo.admin.inc',
+  );
+  $menu['admin/reports/systeminfo/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $menu['admin/reports/systeminfo/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('systeminfo_admin_overview_settings'),
+    'access arguments' => array('administer system information'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'systeminfo.admin.inc',
+  );
+  $menu['admin/reports/systeminfo/drupal'] = array(
+    'title' => 'Drupal',
+    'description' => 'View current state of the Drupal installation.',
+    'page callback' => 'systeminfo_admin_drupal',
+    'access arguments' => array('access system information'),
+    'weight' => 0,
+    'file' => 'systeminfo.admin.drupal.inc',
+  );
+  $menu['admin/reports/systeminfo/drupal/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $menu['admin/reports/systeminfo/drupal/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('systeminfo_admin_drupal_settings'),
+    'access arguments' => array('administer system information'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'systeminfo.admin.drupal.inc',
+  );
+  $menu['admin/reports/systeminfo/php'] = array(
+    'title' => 'PHP',
+    'description' => 'View current state of PHP.',
+    'page callback' => 'systeminfo_admin_php',
+    'access arguments' => array('access system information'),
+    'weight' => 5,
+    'file' => 'systeminfo.admin.php.inc',
+  );
+  $menu['admin/reports/systeminfo/php/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $menu['admin/reports/systeminfo/php/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('systeminfo_admin_php_settings'),
+    'access arguments' => array('administer system information'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'systeminfo.admin.php.inc',
+  );
+  $menu['admin/reports/systeminfo/database'] = array(
+    'title' => 'Database system',
+    'description' => 'View current state of the database system.',
+    'page callback' => 'systeminfo_admin_database',
+    'access arguments' => array('access system information'),
+    'weight' => 10,
+    'file' => 'systeminfo.admin.database.inc',
+  );
+  $menu['admin/reports/systeminfo/database/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $menu['admin/reports/systeminfo/database/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('systeminfo_admin_database_settings'),
+    'access arguments' => array('administer system information'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'systeminfo.admin.database.inc',
+  );
+
+  $menu['admin/reports/systeminfo/database/content'] = array(
+    'title' => 'Database table content',
+    'page callback' => 'systeminfo_admin_database_table_content',
+    'access arguments' => array('access system information'),
+    'type' => MENU_CALLBACK,
+    'file' => 'systeminfo.admin.database.inc',
+  );
+  $menu['admin/reports/systeminfo/database/structure'] = array(
+    'title' => 'Database table structure',
+    'page callback' => 'systeminfo_admin_database_table_structure',
+    'access arguments' => array('access system information'),
+    'type' => MENU_CALLBACK,
+    'file' => 'systeminfo.admin.database.inc',
+  );
+
+  return $menu;
+}

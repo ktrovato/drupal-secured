@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * @file
+ * Relative Paths to Absolute URLs
+ *
+ * Filter for converting relative paths to absolute URLs.
+ *
+ */
+function rel_to_abs_filter_info() {
+  $filters['rel_to_abs'] = array(
+    'title' => t('Relative Paths to Absolute URLs'),
+    'description' => t('Filter for convertion of relative paths to absolute URLs.'),
+    'process callback' => 'rel_to_abs_filter_html',
+    'settings callback' => 'rel_to_abs_filter_html_settings',
+    'tips callback' => 'rel_to_abs_filter_html_tips',
+    'cache' => TRUE,
+  );
+  return $filters;
+}
+
+// Filter callbacks.
+
+function rel_to_abs_filter_html($text, $filter, $format) {
+  $lang = language_default();
+  $front = url('<front>', array(
+    'absolute' => TRUE,
+    'language' => $lang
+  ));
+  $base_url = $front;
+  $text = _absolute_url($text, $base_url);
+  return $text;
+}
+
+function _absolute_url($txt, $base_url) {
+  $needles = array('href="', 'src="', 'background="');
+  $new_txt = '';
+  if (substr($base_url, -1) != '/') {
+    $base_url .= '/';
+  }
+  $new_base_url = $base_url;
+  $base_url_parts = parse_url($base_url);
+
+  foreach ($needles as $needle) {
+    while ($pos = strpos($txt, $needle)) {
+      $pos += strlen($needle);
+      if (substr($txt, $pos, 7) != 'http://' && substr($txt, $pos, 8) != 'https://' && substr($txt, $pos, 6) != 'ftp://' && substr($txt, $pos, 9) != 'mailto://') {
+        $new_txt .= substr($txt, 0, $pos) . $new_base_url;
+      }
+      else {
+        $new_txt .= substr($txt, 0, $pos);
+      }
+      $txt = substr($txt, $pos);
+    }
+    $txt = $new_txt . $txt;
+    $new_txt = '';
+  }
+  return $txt;
+}
+
+function rel_to_abs_filter_html_settings($format) {
+
+}
+
+function rel_to_abs_filter_html_tips($filter, $format, $long = FALSE) {
+
+}
+

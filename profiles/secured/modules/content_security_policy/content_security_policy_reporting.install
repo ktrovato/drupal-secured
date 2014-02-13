@@ -1,0 +1,45 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function content_security_policy_reporting_schema() {
+  return array(
+    'content_security_policy_violation_report' => array(
+      'fields' => array(
+        'vrid' => array(
+          'description' => 'Primary Key: a unique log id for this violation report.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'request' => array(
+          'description' => 'HTTP request line of the resource whose policy is violated (including method, resource, path, HTTP version)',
+          'type' => 'text',
+          'not null' => TRUE,
+        ),
+        'request_headers' => array(
+          'description' => 'HTTP request headers sent with the request (above) for the CSP-Protected content',
+          'type' => 'text',
+          'not null' => TRUE,
+        ),
+        'blocked_uri' => array(
+          'description' => 'URI of the resource that was blocked from loading due to a violation in policy',
+          'type' => 'text',
+          'not null' => TRUE,
+        ),
+        'violated_directive' => array(
+          'description' => 'The policy section that was violated (e.g., "script-src *.mozilla.org").',
+          'type' => 'text',
+          'not null' => TRUE,
+        ),
+        'timestamp' => array(
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => 'Unix timestamp of when the policy violation report was logged.',
+        ),
+      ),
+      'primary key' => array('vrid'),
+    ),
+  );
+}

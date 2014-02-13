@@ -1,0 +1,21 @@
+<?php
+/**
+ * @file
+ * Update Drupal elements to make them more secure and compliant
+ * This module will be a home for any future requirement identified by PCI DSS
+ * or similar security scans
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pci_update_form_user_login_alter(&$form, &$form_state) {
+  $form['#attributes']['autocomplete'] = 'off';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pci_update_form_user_login_block_alter(&$form, &$form_state) {
+  $form['#attributes']['autocomplete'] = 'off';
+}

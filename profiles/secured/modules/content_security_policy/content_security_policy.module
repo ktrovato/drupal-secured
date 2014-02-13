@@ -1,0 +1,295 @@
+<?php
+
+/**
+ * Directives of this type allow a source host list and the 'self' keyword, or
+ * 'none'.
+ */
+define('CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST', 0);
+
+/**
+ * Directives of this type allow a list of one or more tokens that alter the
+ * default CSP behavior, such as 'inline-script' and 'eval-script';
+ */
+define('CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_OPTIONS', 1);
+
+/**
+ * Directives of this type allow one or more URIs as their value.
+ */
+define('CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_URI', 2);
+
+/**
+ * User agents should both enforce the policy and report violations. 
+ */
+define('CONTENT_SECURITY_POLICY_MODE_FULL', 0);
+
+/**
+ * User agents should report violations but not enforce the policy 
+ * (report-only). 
+ */
+define('CONTENT_SECURITY_POLICY_MODE_REPORT_ONLY', 1);
+
+/**
+* Implements hook_permission().
+*/
+function content_security_policy_permission() {
+  return array(
+    'administer content security policies' => array(
+      'title' => t('Administer content security policies'),
+      'description' => t('Administer content security policies'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function content_security_policy_menu() {
+  $items = array();
+
+  // The Content Security Policy settings pages have been added to the "People"
+  // section since that's where other security-related configuration settings,
+  // such as "IP Blocking", live.
+  $items['admin/config/people/content-security-policy'] = array(
+    'title' => 'Content Security Policies',
+    'description' => 'Add, edit or delete your site\'s content security policies.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_security_policy_overview_page'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer content security policies'),
+    'file' => 'content_security_policy.admin.inc',
+  );
+  $items['admin/config/people/content-security-policy/list'] = array(
+    'title' => 'Content Security Policies',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0, 
+  );
+  $items['admin/config/people/content-security-policy/add'] = array(
+    'title' => 'Add policy',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_security_policy_add_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer content security policies'),
+    'file' => 'content_security_policy.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1, 
+  );
+  $items['admin/config/people/content-security-policy/%content_security_policy_name/edit'] = array(
+    'title' => 'Edit policy',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_security_policy_edit_form', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer content security policies'),
+    'file' => 'content_security_policy.admin.inc',
+  );
+  $items['admin/config/people/content-security-policy/%content_security_policy_name/delete'] = array(
+    'title' => 'Delete policy',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_security_policy_delete_form', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer content security policies'),
+    'file' => 'content_security_policy.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_init().
+ */
+function content_security_policy_init() {
+  $active_policies = variable_get('content_security_policy_active_policies', array());
+  foreach ($active_policies as $pid => $value) {
+    if ($policy = content_security_policy_load($pid)) {
+      content_security_policy_add_policy_http_header($policy);
+    }
+  }
+}
+
+/**
+ * Adds the X-Content-Security-Policy header to the http headers.
+ * 
+ * param $policy
+ *   An associative array describing the content security policy to send.
+ */
+function content_security_policy_add_policy_http_header($policy) {
+  // Set the HTTP header to use based on the policy mode (report or report and 
+  // enforce).
+  $mode = $policy->mode;
+  $header = ($mode == CONTENT_SECURITY_POLICY_MODE_REPORT_ONLY) ? 'X-Content-Security-Policy-Report-Only' : 'X-Content-Security-Policy'; 
+
+  // The CSP spec example sends multiple policies as individual headers, while
+  // Drupal sends one header, separating the individual policies with commas.
+  // http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 seems to
+  // indicate this is valid, and FF 4 beta correctly handles multiple policies
+  // in one header.
+  if ($policy_header = _content_security_policy_to_string($policy)) {
+    drupal_add_http_header($header, $policy_header, TRUE);
+  }
+}
+
+/**
+ * Returns a list of supported Content Security Policy directives.
+ */
+function _content_security_policy_directives() {
+  return array(
+    'allow' => array(
+      'name' => 'allow',
+      'label' => t('Allow (default)'),
+      'description' => t('The catch-all section that defines the security policy for all types of content which are not called out in any of the other directives. Defines the default policy for un-specified content types, except for frame-ancestors, which MUST be enforced as "*" when not explicitly stated.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+      'required' => TRUE,
+    ),
+    'options' => array(
+      'name' => 'options',
+      'label' => t('Options'),
+      'description' => t('Options for modifying the underlying behavior of CSP are specified here. '),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_OPTIONS,
+    ),
+    'img-src' => array(
+      'name' => 'img-src',
+      'label' => t('Images'),
+      'description' => t('Indicates which sources are valid for images and favicons.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'media-src' => array(
+      'name' => 'media-src',
+      'label' => t('Media'),
+      'description' => t('Indicates which sources are valid for audio and video elements. .'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'script-src' => array(
+      'name' => 'script-src',
+      'label' => t('Scripts'),
+      'description' => t('Indicates which sources are valid for scripts.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'object-src' => array(
+      'name' => 'object-src',
+      'label' => t('Objects'),
+      'description' => t('Indicates which sources are valid for object, embed, and applet elements.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'frame-src' => array(
+      'name' => 'frame-src',
+      'label' => t('Frames'),
+      'description' => t('Indicates which sources are valid for frame and iframe elements. '),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),    
+    'font-src' => array(
+      'name' => 'font-src',
+      'label' => t('Fonts'),
+      'description' => t('Indicates which sources are valid for @font-src CSS loads.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'xhr-src' => array(
+      'name' => 'xhr-src',
+      'label' => t('Ajax'),
+      'description' => t('A list of hosts that may be used as source in XMLHttpRequest (Ajax) connections. Ajax requests to sources not in this list will be rejected by the user agent. If left empty, the value for the allow directive is used.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'frame-ancestors' => array(
+      'name' => 'frame-ancestors',
+      'label' => t('Frame ancestors'),
+      'description' => t('Indicates which sources are valid ancestors for embedding the protected resource via object, frame and iframe  tags. An ancestor is any HTML document between the protected resource and the top of the window frame tree; for example, if A embeds B which embeds C, both A and B are ancestors of C. If A embeds both B and C, B is not an ancestor of C, but A still is.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'style-src' => array(
+      'name' => 'style-src',
+      'label' => t('Stylesheets'),
+      'description' => t('Indicates which sources are valid for externally linked stylesheets.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_HOST_LIST,
+    ),
+    'report-uri' => array(
+      'name' => 'report-uri',
+      'label' => t('Report URI'),
+      'description' => t('#  Instructs the browser where to send a report when CSP is violated.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_URI,
+    ),
+    'policy-uri' => array(
+      'name' => 'policy-uri',
+      'label' => t('Policy URI'),
+      'description' => t('Indicates the location of a file containing the security policies for the protected resource.'),
+      'type' => CONTENT_SECURITY_POLICY_DIRECTIVE_TYPE_URI,
+    ),
+  );
+}
+
+/**
+ * Returns a list of available options for the "options" directive.
+ */
+function _content_security_policy_options() {
+  return array(
+   'inline-script' => array(
+      'label' => t('Enable inline scripts and javascript: URIs'), 
+    ),
+    'eval-script' => array(
+      'label' => t('Enable the eval() functionality of scripts interpreted by the browser, and allows code to be created from strings in uses of the new Function() constructor, setTimeout and setInterval'), 
+    ),
+  );
+}
+
+/**
+ * Persists a policy.
+ * 
+ * param $policy
+ *   An associative array representing the policy to save.
+ */
+function content_security_policy_save($policy_name, $policy) {
+  return variable_set('content_security_policy__policy_' . $policy_name, $policy);	
+}
+
+/**
+ * Retrieves a policy based on the policy's id.
+ * 
+ * param $pid
+ *   The policy id for the policy to load.
+ * 
+ * returns
+ *   A content security policy object representing the requested policy, or 
+ *   FALSE if the policy does not exist or could not be loaded. 
+ */
+function content_security_policy_load($pid) {
+  $result = db_query('SELECT * FROM {content_security_policy} WHERE pid = :pid', array(':pid' => $pid), array('fetch' => PDO::FETCH_OBJ))->fetch();
+  if ($result) {
+    $result->data = unserialize($result->data);
+  }
+  return $result;
+}
+
+/**
+ * Retrieves a policy based on the policy's machine name.
+ * 
+ * param $name
+ *   The policy's machine name.
+ * 
+ * returns
+ *   A content security policy object representing the requested policy, or 
+ *   FALSE if the policy does not exist or could not be loaded. 
+ */
+function content_security_policy_name_load($name) {
+  $result = db_query('SELECT * FROM {content_security_policy} WHERE name = :name', array(':name' => $name), array('fetch' => PDO::FETCH_OBJ))->fetch();
+  if ($result) {
+    $result->data = unserialize($result->data);
+  }
+  return $result;
+}
+
+/**
+ * Helper function that converts a policy into a string.
+ */
+function _content_security_policy_to_string($policy) {
+  $directives = array();
+
+  if (isset($policy->data) && !empty($policy->data)) {
+    foreach($policy->data as $directive_name => $directive_values) {
+      if ($directive_values) {
+        $directives[] = $directive_name . ' ' . (is_array($directive_values) ? implode(' ', $directive_values) : $directive_values) . ';';
+      }
+    }
+    return implode(' ', $directives);
+  }
+  else {
+    return '';
+  }
+}

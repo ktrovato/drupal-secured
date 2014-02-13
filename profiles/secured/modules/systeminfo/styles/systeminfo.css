@@ -1,0 +1,42 @@
+
+/**
+ *
+ */
+
+table.systeminfo-width50 td {
+  width: 50%;
+}
+
+table.systeminfo td.header1 {
+  font-weight: bold;
+}
+table.systeminfo td.title1 {
+  font-style: italic;
+}
+table.systeminfo td.text1 {
+  padding-left: 2em;
+}
+
+table.systeminfo td.header2 {
+  padding-left: 2em;
+  font-weight: bold;
+}
+table.systeminfo td.title2 {
+  padding-left: 2em;
+  font-style: italic;
+}
+table.systeminfo td.text2 {
+  padding-left: 4em;
+}
+
+table.systeminfo td.header3 {
+  padding-left: 4em;
+  font-weight: bold;
+}
+table.systeminfo td.title3 {
+  padding-left: 4em;
+  font-style: italic;
+}
+table.systeminfo td.text3 {
+  padding-left: 6em;
+}

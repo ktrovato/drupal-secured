@@ -1,0 +1,14 @@
+
+name = System Information
+description = Displays information about the current state of the Drupal installation and system environment.
+
+core = 7.x
+package = Monitoring
+configure = admin/reports/systeminfo/settings
+
+; Information added by drupal.org packaging script on 2011-07-27
+version = "7.x-3.0-beta1"
+core = "7.x"
+project = "systeminfo"
+datestamp = "1311781919"
+

@@ -1,0 +1,18 @@
+name = Nivo Slider
+description = Provides a user interface for building a rotating banner powered by the Nivo Slider jQuery plugin.
+core = 7.x
+
+dependencies[] = block
+dependencies[] = jquery_update
+dependencies[] = libraries (2.x)
+
+files[] = nivo_slider.test
+
+configure = admin/structure/nivo-slider
+
+; Information added by drupal.org packaging script on 2013-03-06
+version = "7.x-1.10"
+core = "7.x"
+project = "nivo_slider"
+datestamp = "1362602968"
+

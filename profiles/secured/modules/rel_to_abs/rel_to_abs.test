@@ -1,0 +1,32 @@
+<?php
+/**
+ * @file testing coverage for rel_to_abs.module
+ */
+
+class testRelToAbsUnitTestCase extends DrupalUnitTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'rel_to_abs unit tests',
+      'description' => 'Unit tests of rel_to_abs.module.',
+      'group' => 'Rel to Abs',
+    );
+  }
+
+  function setUp() {
+    drupal_load('module', 'rel_to_abs');
+    parent::setUp();
+  }
+
+  public function testRelToAbsFilterUnitTestCase() {
+    $lang = language_default();
+    $front = url('<front>', array(
+      'absolute' => TRUE,
+      'language' => $lang
+    ));
+    $markup = '<div><a href="/node/1">link</a><img src="/files/test.jpg"/><span background="/files/test.jpg">test</span></div>';
+    $check = '<div><a href="' . $front . '/node/1">link</a><img src="' . $front . '/files/test.jpg"/><span background="' . $front . '/files/test.jpg">test</span></div>';
+    $result = rel_to_abs_filter_html($markup, NULL, NULL);
+    $this->assertEqual($check, $result);
+  }
+}

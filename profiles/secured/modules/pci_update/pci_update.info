@@ -1,0 +1,9 @@
+name = "PCI Update"
+description = "Updates Drupal to satisfy vulnerabilities reported by Approved Scan Vendors (ASV), often as a result of the PCI DSS compliance processes."
+core = 7.x
+; Information added by drupal.org packaging script on 2011-10-11
+version = "7.x-1.0"
+core = "7.x"
+project = "pci_update"
+datestamp = "1318332107"
+

@@ -1,0 +1,116 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function content_security_policy_reporting_menu() {
+  $items = array();
+
+  $items['content-security-policy/report'] = array(
+    'access arguments' => array('access content'),
+    'page callback' => 'content_security_policy_reporting_incoming_violation_report',
+  );
+
+  $items['admin/reports/content-security-policy'] = array(
+    'title' => t('Content security policy violations'),
+    'page callback' => 'content_security_policy_reporting_violations_overview',
+    'access arguments' => array('administer content security policies'),
+    'file' => 'content_security_policy_reporting.admin.inc',
+  );
+  $items['admin/reports/content-security-policy/%content_security_policy_violation_report'] = array(
+    'title' => t('Policy violation details'),
+    'page callback' => 'content_security_policy_reporting_violation_detail',
+    'access arguments' => array('administer content security policies'),
+    'page arguments' => array(3),
+    'file' => 'content_security_policy_reporting.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Handles an incoming security content policy violation report.
+ */
+function content_security_policy_reporting_incoming_violation_report() {
+  // Sanity check: ensure that the request is a POST request with mime-type
+  // "application/json" and a non-empty request body.
+  if (
+    $_SERVER['REQUEST_METHOD'] == 'POST' 
+    && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== FALSE
+    && $_SERVER['CONTENT_LENGTH'] > 0
+    )
+  {
+    // Fetch the report from the POST body.
+    $request_body = @file_get_contents('php://input');
+
+    // Decode the JSON encoded violation report.
+    if ($report_body = drupal_json_decode($request_body)) {
+      // Log the violation report.
+      content_security_policy_reporting_log_violation(
+        $report_body['csp-report']['request'],
+        $report_body['csp-report']['request-headers'],
+        $report_body['csp-report']['blocked-uri'],
+        $report_body['csp-report']['violated-directive']
+      );
+    }
+  }
+}
+
+/**
+ * Handles and logs violation reported by user agents.
+ */
+function content_security_policy_reporting_log_violation($request, $headers, $blocked_uri, $violated_directive) {
+  _content_security_policy_reporting_log_scrub_headers($headers);
+
+  db_insert('content_security_policy_violation_report')
+    ->fields(array(
+      'request' => $request,
+      'request_headers' => $headers,
+      'blocked_uri' => $blocked_uri,
+      'violated_directive' => $violated_directive,
+      'timestamp' => time(),
+    ))
+    ->execute();
+}
+
+/**
+ * Removes sensitive or private information prior to logging.
+ *
+ * By default, we need to be careful about logging sensitive information such as
+ * cookies. Scrub this sensitive information prior to logging.
+ *
+ * TODO: In some scenarios, we'd want to log this information anyway. Make this
+ * configurable through variables, allowing admins to switch on logging and/or
+ * use blacklists/whitelists containing the headers to log.
+ */
+function _content_security_policy_reporting_log_scrub_headers(&$headers) {
+  // Do not log the cookie information, as this information can be used to
+  // hijack a user's session.
+  $header_blacklist = array(
+    'cookie',
+  );
+
+  // Process the headers and remove those that are blacklisted.
+  $headers = preg_replace('/(^(' . join('|', $header_blacklist). '):.*$)/i', '', $headers);
+}
+
+/**
+ * Loads a Content Security Policy violation report.
+ *
+ * Also used as a menu argument loader function.
+ *
+ * @param $vrid
+ *   The vrid of the CSP violation report to load.
+ * @return
+ *   The content security policy violation report identified by $vrid, or FALSE
+ *   if the report does not exist or could not be loaded.
+ */
+function content_security_policy_violation_report_load($vrid) {
+  $result = db_select('content_security_policy_violation_report', 'vr')
+    ->fields('vr', array('vrid', 'timestamp', 'request', 'blocked_uri', 'violated_directive', 'request_headers'))
+    ->condition('vrid', $vrid)
+    ->execute()
+    ->fetchObject();
+
+  return $result;
+}

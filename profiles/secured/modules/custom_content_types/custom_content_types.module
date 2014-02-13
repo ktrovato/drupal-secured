@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Custom Content Types feature.
+ */
+
+include_once 'custom_content_types.features.inc';

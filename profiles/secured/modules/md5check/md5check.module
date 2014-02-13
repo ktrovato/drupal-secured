@@ -1,0 +1,108 @@
+<?php 
+/**
+ * @file
+ * MD5 check module checks all modules for code changes
+ */
+
+
+/**
+ * Implements hook_cron()
+ *
+ * Runs through all active modules and generates a md5 hash of its files and compares this to existing values.
+ * If changed (and not from null) a watchdog() is called with mode CRITICAL
+ */
+function md5check_cron() {
+  // Fetches an array of all active modules and looping through them
+  $modules = module_list(TRUE, FALSE);
+  foreach ($modules as $moduleName) {
+    // Loads the module data from database
+    $module = md5check_get_values_for_module($moduleName);
+    // Creates a md5 hash of the modules files
+    $md5 = md5check_calculate_md5_value_for_module($module);
+    
+    // If the existing module md5 hash isn't null (as never runned before) we'll check if it has changed
+    // else we'll just store the new value
+    if ($module->md5check !== NULL) {
+      if ($md5 != $module->md5check) {
+        // The value has changed as in a files content has changed - we'll report this to the log
+        watchdog('security',
+          t('Security issue. Module @moduleName has changed.', array('@moduleName' => $moduleName)),
+          array(),
+          WATCHDOG_CRITICAL
+        );
+        // and stores the new value so we won't report the same change again
+        md5check_setMD5value($module->filename, $md5);
+      }
+    }
+    else {
+      // Existing value is null - new value will be stored
+      md5check_setMD5value($module->filename, $md5);
+    }
+  }
+}
+
+/**
+ * Loads a data object for the given module including main module filename, module name etc.
+ * @param string $moduleName
+ * @return stdObject
+ */
+function md5check_get_values_for_module($moduleName) {
+  $sql = 'SELECT * FROM {system} WHERE name = :name';
+  $result = db_query($sql, array('name' => $moduleName));
+  return $result->fetch();
+}
+
+/**
+ * Calculates all modules files combined md5 hash
+ * @param string $module
+ * @return string
+ */
+function md5check_calculate_md5_value_for_module($module) {
+  // Gets path to module
+  $modulePath = drupal_get_path('module', $module->name);
+  // Finds all file paths resursively for the given module and loops through them to calculate their md5 value
+  $files = md5check_rglob($modulePath . '/*');
+  $md5 = '';
+  foreach ($files as $file) {
+    if (is_file($file)) {
+      $md5 .= md5_file($file);
+    }
+  }
+  $md5 = md5($md5);
+  return $md5;
+}
+
+/**
+ * Loops through a given dir and finds all files in it and returns this as an array
+ * @param string $pattern
+ * @param int $flags
+ * @param string $path
+ * @return array
+ */
+function md5check_rglob($pattern, $flags = 0, $path = '') {
+  if (!$path && ($dir = dirname($pattern)) != '.') {
+    if ($dir == '\\' || $dir == '/') {
+      $dir = '';
+    }
+    return md5check_rglob(basename($pattern), $flags, $dir . '/');
+  }
+  
+  $paths = glob($path . '*', GLOB_ONLYDIR | GLOB_NOSORT);
+  $files = glob($path . $pattern, $flags);
+  foreach ($paths as $p) {
+    $files = array_merge($files, md5check_rglob($pattern, $flags, $p . '/'));
+  }
+  return $files;
+}
+
+/**
+ * Stores a new md5 value for a given module filename
+ * @param string module_filename
+ * @param string $md5
+ */
+function md5check_setMD5value($module_filename, $md5) {
+  db_update('system')
+  ->fields( array('md5check' => $md5) )
+  ->condition('filename', $module_filename)
+  ->execute();
+}

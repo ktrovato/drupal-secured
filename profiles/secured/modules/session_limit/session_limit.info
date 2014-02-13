@@ -1,0 +1,14 @@
+name = Session Limit
+description = "Limit simultaneous user sessions."
+core = 7.x
+files[] = session_limit.install
+files[] = session_limit.module
+files[] = session_limit.tokens.inc
+files[] = tests/session_limit.test
+
+; Information added by drupal.org packaging script on 2013-07-06
+version = "7.x-2.0-rc2"
+core = "7.x"
+project = "session_limit"
+datestamp = "1373115956"
+

@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * Implements hook_context_plugins()
+ */
+function context_metadata_context_plugins() {
+  $plugins = array();
+
+  $plugins['context_metadata_context_reaction'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'context_metadata') . '/plugins',
+      'file' => 'context_metadata_reaction.inc',
+      'class' => 'context_metadata_reaction',
+      'parent' => 'context_reaction',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry()
+ */
+function context_metadata_context_registry() {
+  return array(
+    'reactions' => array(
+      'context_metadata' => array(
+        'title' => t('Meta Data'),
+        'plugin' => 'context_metadata_context_reaction',
+      ),
+    ),
+  );
+}
+
+/**
+* Implements hook_context_page_reaction().
+*/
+function context_metadata_context_page_reaction() {
+  if ($plugin = context_get_plugin('reaction', 'context_metadata')) {
+    $plugin->execute();
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function context_metadata_preprocess_page(&$vars) {
+  $metadata = drupal_static('metadata_array');
+  if (isset($metadata['metadata_h1'])) {
+    drupal_set_title(token_replace($metadata['metadata_h1']));
+    unset($vars['title']);
+  }
+}
+
+/**
+ * Implements hook_preprocess_html()
+ * @param $vars
+ */
+function context_metadata_preprocess_html(&$vars) {
+
+  $metadata = drupal_static('metadata_array');
+  if (isset($metadata['metadata_title'])) {
+    $token_title = token_replace($metadata['metadata_title']);
+    $vars['head_title'] = $token_title;
+    $vars['head_array']['title'] = $token_title;
+  }
+}
+
+/**
+ * Implements hook_html_head_alter()
+ * @param unknown_type $elements
+ */
+function context_metadata_html_head_alter(&$elements) {
+
+  unset($elements['system_meta_generator']);
+
+  $metadata = drupal_static('metadata_array');
+  if (isset($metadata['metadata_description'])) {
+    $elements['metatag_description'] = array(
+      '#theme' => 'metatag',
+      '#tag' => 'meta',
+      '#value' => token_replace($metadata['metadata_description']),
+      '#type' => 'html_tag',
+      '#id' => 'metatag_description',
+      '#name' => 'description'
+      );
+  }
+
+  if (isset($metadata['metadata_keywords'])) {
+    $elements['metatag_keywords'] = array(
+      '#theme' => 'metatag',
+      '#tag' => 'meta',
+      '#value' => token_replace($metadata['metadata_keywords']),
+      '#type' => 'html_tag',
+      '#id' => 'metatag_keywords',
+      '#name' => 'keywords'
+    );
+  }
+
+  if (isset($metadata['metadata_canonical'])) {
+    foreach ($elements as $key => $element) {
+      if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'canonical') {
+        $elements[$key]['#attributes']['href'] = token_replace($metadata['metadata_canonical']);
+      }
+      if ($key == 'metatag_canonical') {
+        $elements[$key]['#value'] = token_replace($metadata['metadata_canonical']);
+      }
+    }
+  }
+}

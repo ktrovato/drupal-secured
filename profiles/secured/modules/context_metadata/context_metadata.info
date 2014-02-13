@@ -1,0 +1,16 @@
+name = "Context Meta Data"
+dependencies[] = "ctools"
+dependencies[] = "metatag"
+dependencies[] = "context"
+description = "Allows site admins to setup Meta Data using Contexts module"
+core = "7.x"
+
+
+
+
+; Information added by drupal.org packaging script on 2012-10-03
+version = "7.x-1.3"
+core = "7.x"
+project = "context_metadata"
+datestamp = "1349274966"
+

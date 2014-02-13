@@ -1,0 +1,45 @@
+<?php
+  
+/**
+ * Implementation of hook_schema()
+ */
+function headerimage_schema() {
+  $schema['headerimage'] = array(
+    'fields' => array(
+      'nid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'block' => array('type' => 'varchar', 'length' => 32, 'not null' => TRUE, 'default' => '0'),
+      'weight' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0),
+      'conditions' => array('type' => 'text', 'not null' => TRUE),
+    ),
+    'primary key' => array('nid'),
+  );
+  
+  $schema['headerimage_block'] = array(
+    'fields' => array(
+      'delta' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'title' => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE, 'default' => ''),
+    ),
+    'primary key' => array('delta'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall
+ */
+function headerimage_uninstall() {
+  // Delete variables
+  db_delete('variable')->condition('name', 'headerimage_%%', 'LIKE')->execute();
+}
+
+/**
+ * Header image blocks should not be cached
+ */
+function headerimage_update_7000() {
+  // Do not cache the headerimage block
+  db_update('block')
+    ->fields(array('cache' => DRUPAL_NO_CACHE))
+    ->condition('module', 'headerimage')
+    ->execute();
+}

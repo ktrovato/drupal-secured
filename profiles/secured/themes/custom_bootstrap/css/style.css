@@ -1,0 +1,148 @@
+#addressfield-wrapper .form-item-submitted-about-your-organization-address-country,
+#addressfield-wrapper .form-item-submitted-address-country  {
+	display: none;
+}
+
+#addressfield-wrapper {
+	padding: 5px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+#webform-component-about-your-organization--address > label:nth-child(1) {
+	font-size: 18px;
+	padding-bottom: 10px;
+}
+
+#block-block-6 {
+	margin: 5px;
+	padding: 5px;
+}
+
+#block-block-7,
+#block-block-8,
+#block-block-9 {
+	width: 31%;
+	margin-right: 12.5px;
+	float: left;
+}
+
+#block-block-10 {
+	clear: left;
+	width: 31%;;
+	margin-left: 12.5px;
+	float: right;
+}
+
+#block-block-4,
+#block-block-11 {
+	clear: left;
+	width: 31%;
+	margin-left: 12.5px;
+	float: right;
+	margin-top: 30px;
+}
+
+#block-block-12 {
+	clear: both;
+	padding-top: 20px;
+	margin-top: 30px;
+}
+
+/*Accessibility header css*/
+
+#accessibility-block {
+	background-color: #cccccc;
+	padding: 5px;
+	color: #ffffff;
+	height: 47px;
+}
+
+.ps-custom {
+	float: left;
+	padding: 5px 3px;
+	margin-right: 10px;
+}
+
+.ts-custom {
+	float: left;
+	padding: 5px 3px;
+	margin-right: 10px;
+}
+
+.ts-custom a {
+	color: #0079AE !important;
+	background-color: #ffffff;
+	display: block;
+	margin: 2px;
+	float: left;
+	border-radius: 5px;
+	vertical-align: bottom;	
+}
+
+.ps-custom a {
+	margin-left: 5px;
+	display: block;
+	margin: 2px;
+	float: left;
+	border-radius: 5px;
+	vertical-align: bottom;	
+}
+
+.search-custom {
+	float: right;
+	padding: 5px;
+}
+
+.bigfont {
+	font-size: 1.5em !important;
+}
+
+.normalfont {
+	font-size: 1em !important;
+}
+
+.smallfont {
+	font-size: .5em !important;
+}
+
+#accessibility-block a:link {
+	color: #ffffff;
+}
+#accessibility-block a:visited {
+	color: #ffffff;
+}
+#accessibility-block a:hover {
+	color: #ffffff;
+}
+#accessibility-block a:active {
+	color: #ffffff;
+}
+
+#main-container.whitefont {
+	color: #ffffff;
+	background-color: #000000;
+}
+
+#main-container.whitefont a {
+	color: #ffffff;
+}
+
+#main-container.bluefont {
+	color: #FFCC66;
+	background-color: #003366;
+}
+
+#main-container.bluefont a {
+	color: #FFCC66;
+}
+
+
+#main-container.resetfont {
+	color: black;
+}
+
+#main-container.resetfont a {
+	color: #0078B0;
+}
+/*end accessibility css*/

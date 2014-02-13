@@ -1,0 +1,12 @@
+name = Content Security Policy Reporting
+description = Handles logging and reporting for content security policy violations.
+core = 7.x
+files[] = content_security_policy_reporting.module
+files[] = content_security_policy_reporting.install
+files[] = content_security_policy_reporting.admin.inc
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "content_security_policy"
+datestamp = "1380567046"
+

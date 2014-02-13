@@ -1,0 +1,159 @@
+name = Drupal Secured
+description = Secured drupal environment developed by <a href="http://pdiwebdesign.com" target=_blank>Peerless Design.</a>
+version = 7.x-1.0
+core = 7.x
+exclusive = TRUE
+;modified version from standard profile. commented out overlay, comments, color
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+dependencies[] = contact
+;dependencies[] = overlay
+dependencies[] = comment
+;dependencies[] = color
+;custom core. turn these on
+dependencies[] = statistics
+dependencies[] = syslog
+dependencies[] = trigger
+;contrib REQUIRED
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = ctools
+dependencies[] = backup_migrate
+dependencies[] = better_formats
+dependencies[] = block_class
+dependencies[] = context
+dependencies[] = context_ui
+dependencies[] = date
+dependencies[] = date_tools
+dependencies[] = date_popup
+dependencies[] = date_context
+dependencies[] = email
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = features
+dependencies[] = field_extractor
+dependencies[] = field_group
+dependencies[] = inline_entity_form
+dependencies[] = json2
+dependencies[] = libraries
+dependencies[] = menu_block
+dependencies[] = rules
+dependencies[] = rules_admin
+dependencies[] = link
+dependencies[] = menu_attributes
+dependencies[] = panels
+dependencies[] = redirect
+dependencies[] = rel_to_abs
+dependencies[] = special_menu_items
+dependencies[] = token
+dependencies[] = variable
+dependencies[] = views_bulk_operations
+dependencies[] = content_audit
+dependencies[] = diff
+dependencies[] = enforce_revlog
+dependencies[] = menu_breadcrumb
+dependencies[] = transliteration
+dependencies[] = module_filter
+dependencies[] = revisioning
+dependencies[] = revisioning_ux
+dependencies[] = ckeditor
+dependencies[] = ckeditor_link
+dependencies[] = crumbs
+dependencies[] = exclude_node_title
+dependencies[] = extlink
+dependencies[] = imce
+dependencies[] = jquery_update
+dependencies[] = pathauto
+dependencies[] = pathologic
+dependencies[] = site_map
+dependencies[] = metatag
+dependencies[] = context_metadata
+dependencies[] = xmlsitemap
+dependencies[] = views_slideshow
+dependencies[] = systeminfo
+dependencies[] = filefield_sources
+dependencies[] = webform
+dependencies[] = css3pie
+dependencies[] = advagg
+dependencies[] = advagg_bundler
+dependencies[] = advagg_css_compress
+dependencies[] = advagg_js_compress
+dependencies[] = advagg_validator
+
+;Custom
+dependencies[] = custom_secure
+dependencies[] = custom_content_types
+
+;contrib security REQUIRED
+dependencies[] = honeypot
+dependencies[] = security_review
+dependencies[] = session_limit
+dependencies[] = genpass
+dependencies[] = login_security
+dependencies[] = password_policy
+dependencies[] = autologout
+dependencies[] = flood_control
+dependencies[] = username_enumeration_prevention
+dependencies[] = pci_update
+dependencies[] = hacked
+dependencies[] = htmlpurifier
+dependencies[] = paranoia
+dependencies[] = content_security_policy
+dependencies[] = content_security_policy_reporting
+;dependencies[] = securelogin**
+
+;contrib OPTIONAL
+;dependencies[] = job_scheduler
+;dependencies[] = scheduler
+;dependencies[] = navbar
+;dependencies[] = services
+;dependencies[] = customfilter
+dependencies[] = masquerade
+;dependencies[] = mailsystem
+;dependencies[] = htmlmail
+;dependencies[] = mimemail
+;dependencies[] = simplenews
+;dependencies[] = contact_forms
+;dependencies[] = backbone
+;dependencies[] = nice_menus
+;dependencies[] = fontyourface
+;dependencies[] = menu_icons
+;dependencies[] = webform_conditional
+;dependencies[] = headerimage
+;dependencies[] = quicktabs
+;dependencies[] = nivo_slider
+;dependencies[] = cors
+;dependencies[] = google_analytics**
+
+;contrib security OPTIONAL
+;dependencies[] = coder
+;dependencies[] = md5check**
+;dependencies[] = logging_alerts**
+;dependencies[] = seckit
+;dependencies[] = cors
+
+;contrib dev
+dependencies[] = devel
+;dependencies[] = node_convert
+
+
+;contrib optional
+;dependencies[] = edit
+;dependencies[] = feeds
+;dependencies[] = feeds_ui

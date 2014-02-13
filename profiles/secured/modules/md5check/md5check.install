@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Installs the MD5 check module
+ */
+
+
+/**
+ * Implementation of hook_install().
+ */
+function md5check_install() {
+  // Ads md5check field to `system` table
+  db_add_field('system', 'md5check', array(
+   'description' => 'The md5check hash of this file',
+   'type' => 'varchar',
+   'length' => '32',
+   'not null' => FALSE,
+  )
+ );
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function md5check_uninstall() {
+  // Removes md5check field from `system` table
+  db_drop_field('system', 'md5check');
+}

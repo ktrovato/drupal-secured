@@ -1,0 +1,847 @@
+<?php
+
+/**
+ * @file headerimage.module
+ * Conditionally display an node in a block.
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
+function headerimage_menu() {
+  $items['admin/structure/headerimage'] = array(
+    'title' => t('Header Image'),
+    'description' => t('Control the Header Image.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('headerimage_settings_block_add'),
+    'access arguments' => array('administer header image'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'headerimage.admin.inc',
+  );
+  $items['admin/structure/headerimage/list'] = array(
+    'title' => t('List'),
+    'page arguments' => array('headerimage_settings_block_add'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/structure/headerimage/settings'] = array(
+    'title' => t('Settings'),
+    'page arguments' => array('headerimage_settings_form'),
+    'access arguments' => array('administer header image'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+
+  $items['admin/structure/headerimage/edit/%'] = array(
+    'title' => t('Edit Header Image block'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('headerimage_settings_block_edit', 4),
+    'access arguments' => array('administer header image'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/structure/headerimage/delete/%'] = array(
+    'title' => t('Delete Header Image block'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('headerimage_block_confirm_delete', 4),
+    'access arguments' => array('administer header image'),
+    'type' => MENU_CALLBACK,
+    'file' => 'headerimage.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Edit block data form
+ */
+function headerimage_settings_block_edit($form, &$form_state, $delta) {
+  $blocks = headerimage_get_blocks();
+
+  $form = array();
+  $form['delta'] = array(
+    '#type' => 'hidden',
+    '#value' => $delta,
+  );
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Block title'),
+    '#description' => t('The block name must be unique.'),
+    '#default_value' => $blocks[$delta],
+    '#required' => true,
+  );
+  $form['op'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+function headerimage_settings_block_edit_validate($form, &$form_state) {
+  $blocks = headerimage_get_blocks();
+
+  // Remove current blockname to prevent false error
+  unset($blocks[$form_state['values']['delta']]);
+
+  if (!empty($blocks)) {
+    // Check if name is unique
+    if (in_array($form_state['values']['title'], $blocks)) {
+      form_set_error('', t('Header Image block %s already exists. Please use a different name.', array('%s' => $form_state['values']['title'])));
+    }
+  }
+}
+
+function headerimage_settings_block_edit_submit($form, &$form_state) {
+  db_update('headerimage_block')
+    ->fields(array(
+      'title' => $form_state['values']['title'],
+    ))
+    ->condition('delta', $form_state['values']['delta'], '=')
+    ->execute();
+
+  drupal_set_message(t('Header Image block updated.'));
+  $form_state['redirect'] = 'admin/structure/headerimage';
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function headerimage_permission() {
+  return array(
+    'administer header image' => array(
+      'title' => t('Administer header image'),
+      'description' => t('Perform administration tasks for headerimage module.'),
+    ),
+    'maintain display conditions' => array(
+      'title' => t('Maintain display conditions'),
+      'description' => t('Perform maintain display conditions.'),
+    ),
+    'view header image' => array(
+      'title' => t('View header image'),
+      'description' => t('Permission to view the header image.'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_block_info().
+ */
+function headerimage_block_info() {
+  $blocks = array();
+  $headerimage_blocks = headerimage_get_blocks();
+  foreach ($headerimage_blocks as $key => $name) {
+    $blocks[$key]['info'] = check_plain($name);
+    $blocks[$key]['cache'] = DRUPAL_NO_CACHE;
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_block_configure().
+ */
+function headerimage_block_configure($delta = '') {
+  $query = db_select('headerimage', 'hi');
+  $query->fields('hi', array('weight'));
+  $query->fields('n', array('title', 'nid'));
+  $query->join('node', 'n', 'n.nid = hi.nid AND hi.block = :delta', array(':delta' => $delta));
+  $query->orderBy('weight', 'ASC');
+  $query->orderBy('nid', 'ASC');
+  $result = $query->execute();
+
+  // Table with image set details
+  $rows = array();
+  foreach ($result as $data) {
+    $rows[] = array(
+      'node' => check_plain($data->title),
+      'weight' => $data->weight,
+      'edit' => l(t('Edit'), "node/$data->nid/edit"),
+    );
+  }
+
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No Header Image nodes assigned to this block.'), 'colspan' => '3'));
+  }
+  $header = array(t('Node'), t('Weight'), array('data' => t('Operation'), 'colspan' => '1'));
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'imageblock')));
+
+  // Pack the tabel in form as markup text.
+  $form['headerimage']['description'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('The table below contains the nodes which will be displayed in this block when there condition evaluates to true.'),
+    '#suffix' => '</p>',
+  );
+
+  $form['headerimage']['table'] = array(
+    '#prefix' => '<div>',
+    '#markup' => $output,
+    '#suffix' => '</div>',
+  );
+  $form['headerimage']['random_fallback'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable a random fallback selection'),
+    '#default_value' => variable_get('headerimage_block_' . $delta . '_random_fallback', 0),
+    '#description' => t('If no node is selected by the conditions, select a random node from those assigned to this block.'),
+  );
+  return $form;
+}
+
+/**
+ * Implementation of hook_block_save().
+ */
+function headerimage_block_save($delta = '', $edit = array()) {
+  variable_set('headerimage_block_' . $delta . '_random_fallback', $edit['random_fallback']);
+}
+
+/**
+ * Implementation of hook_block_view().
+ */
+function headerimage_block_view($delta = '') {
+  if (user_access('view header image')) {
+    // select node from nodes assigned to this block
+    $nid = headerimage_select_node($delta);
+    $teaser = variable_get('headerimage_teaser', true) ? 'teaser' : 'full';
+
+    // prepare block output
+    if (!empty($nid)) {
+      $node = node_load($nid);
+      $unpublished = $node->status ? false : true;
+
+      // mimic node_view
+      if (node_access('view', $node)) {
+        if (module_exists('ds') && variable_get('headerimage_module_ds', false)) {
+          $node = node_view($node);
+        } else {
+          node_build_content($node, $teaser);
+        }
+
+        $block['content'] = theme('headerimage_block', array('node' => $node, 'teaser' => $teaser, 'unpublished' => $unpublished));
+        $block['nid'] = $nid;
+      } else {
+        $block['content'] = '';
+      }
+
+      return $block;
+    }
+  }
+}
+
+/**
+ * Select a node to be displayed in the block
+ *
+ * Node selection by (1)weight and (2)condition.
+ * If multiple conditions are present, any true condition will select the node.
+ * If no node is selected by the conditions and random fallback selection is
+ * enabled for the block, one of the available nodes will be selected at random.
+ *
+ * @param $block
+ *   The headerimage block number ($delta)
+ *
+ * @return
+ *   nid of the selected node
+ *   null: no node selected
+ */
+function headerimage_select_node($block) {
+  $match = NULL;
+  $block_nids = array();
+
+  $query = db_select('headerimage', 'hi');
+  $query->fields('hi', array('nid', 'conditions'));
+  $query->condition('hi.block', $block);
+
+  if (module_exists('locale') && variable_get('headerimage_language_support', FALSE)) {
+    $query->join('node', 'n', 'hi.nid = n.nid');
+
+    // Respect language neutral if set
+    if (variable_get('headerimage_language_support_neutral', FALSE)) {
+      $query->condition(db_or()
+          ->condition('n.language', $GLOBALS['language']->language)
+          ->condition('n.language', LANGUAGE_NONE)
+      );
+    } else {
+      $query->condition('n.language', $GLOBALS['language']->language);
+    }
+  }
+
+  $query->orderBy('hi.weight', 'ASC');
+  $query->orderBy('hi.nid', 'ASC');
+  $result = $query->execute();
+
+  foreach ($result as $header_image) {
+    $conditions = unserialize($header_image->conditions);
+    $match = false;
+    // Store the nid in an array for the random selection fallback option.
+    $block_nids[] = $header_image->nid;
+    $selected_types = variable_get('headerimage_condition_types', array('nid' => 'nid'));
+    foreach ($conditions as $type => $condition) {
+      if (!empty($condition) && !empty($selected_types[$type])) {
+        switch ($type) {
+          case 'nid':
+            $match = headerimage_eval_nid($condition);
+            break;
+          case 'url':
+            $match = headerimage_eval_url($condition);
+            break;
+          case 'taxonomy':
+            $match = headerimage_eval_taxonomy($condition);
+            break;
+          case 'book':
+            $match = headerimage_eval_book($condition);
+            break;
+          case 'nodetype':
+            $match = headerimage_eval_nodetype($condition);
+            break;
+          case 'php':
+            $match = php_eval($condition);
+            break;
+        }
+      }
+      if ($match)
+        break;
+    }
+    if ($match)
+      break;
+  }
+  if ($match) {
+    return $header_image->nid;
+  } elseif (variable_get('headerimage_block_' . $block . '_random_fallback', 0) && count($block_nids)) {
+    return $block_nids[array_rand($block_nids)];
+  }
+}
+
+/**
+ * Evaluate nid condition
+ *
+ * Checks if current page is in list of nids
+ *
+ * @param $condition
+ *   comma separated list of nids
+ *
+ * @return
+ *   true: current page is in $condition
+ *   false: if not
+ *   null: current page is not a node
+ */
+function headerimage_eval_nid($condition) {
+  $match = NULL;
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $nids = explode(',', $condition);
+    $match = in_array(arg(1), $nids);
+  }
+  return $match;
+}
+
+/**
+ * Evaluate url condition
+ *
+ * Check if current page is in selected paths
+ *
+ * @param $condition
+ *   text with paths or '<frontpage>'. May contain wild cards.
+ *
+ * @return
+ *   true: current page matches one of the $condition paths;
+ *   false: if not
+ */
+function headerimage_eval_url($condition) {
+  $match = NULL;
+  $path = drupal_get_path_alias($_GET['q']);
+  $regexp = '/^(' . preg_replace(array('/(\r\n?|\n)/', '/\\\\\*/', '/(^|\|)\\\\<front\\\\>($|\|)/'), array('|', '.*', '\1' . preg_quote(variable_get('site_frontpage', 'node'), '/') . '\2'), preg_quote($condition, '/')) . ')$/';
+  // Compare with the internal and path alias (if any).
+  $match = preg_match($regexp, $path);
+  if ($match)
+    return true;
+
+  if ($path != $_GET['q']) {
+    $match = preg_match($regexp, $_GET['q']);
+  }
+  return $match;
+}
+
+/**
+ * Evaluate taxonomy condition
+ *
+ * Check if current page has selected taxonomy terms
+ *
+ * @param $condition
+ *   array of taxonomy term tid's
+ *
+ * @return
+ *   true: current page contains one of $condition's tags
+ *   false: if not
+ *   null: current page is not a node
+ */
+function headerimage_eval_taxonomy($condition) {
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    if ($node = menu_get_object()) {
+      $query = "SELECT tid FROM {taxonomy_index} WHERE nid = :nid";
+      $terms = db_query($query, array(':nid' => $node->nid))->fetchAllKeyed(0, 0);
+      foreach (array_keys($terms) as $key) {
+        if (isset($condition[$key])) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+  return null;
+}
+
+/**
+ * Evaluate book condition
+ *
+ * Return true if current node is a page of the book(s) selected in the condition
+ *
+ * @param $condition
+ *   array of book root nid's
+ *
+ * @return
+ *   true: current node is a page in $condition's books
+ *   false: if not
+ *   null: current page is not a node
+ */
+function headerimage_eval_book($condition) {
+  $match = NULL;
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    // check if current node is one of the condition pages (books)
+    $match = in_array(arg(1), $condition);
+    if ($match)
+      return true;
+
+    // check if current page is part of book in the condition pages
+    $bid = db_select('book')->fields(array('bid'))->condition('nid', arg(1))->fetchField();
+    $match = in_array($bid, $condition);
+  }
+  return $match;
+}
+
+/**
+ * Evaluate content type condition
+ *
+ * Return true if type of current node is selected
+ *
+ * @param $condition
+ *   array of selected content types
+ *
+ * @return
+ *   true: current content type is selected
+ *   false: if not
+ *   null: current page is not a node
+ */
+function headerimage_eval_nodetype($condition) {
+  $match = NULL;
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $node = menu_get_object();
+    $match = in_array($node->type, $condition);
+  }
+
+  return $match;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function headerimage_field_extra_fields() {
+  $info = array();
+
+  foreach (node_type_get_types() as $node_type) {
+    if (in_array($node_type->type, variable_get('headerimage_node_type', array()), true)) {
+      $info['node'][$node_type->type]['form']['headerimage'] = array(
+        'label' => t('Header image'),
+        'description' => t('Header image form elements'),
+        'weight' => 0,
+      );
+    }
+  }
+
+  return $info;
+}
+
+/**
+ * Implementation of hook_form_alter
+ *
+ * Add display conditions to header image node forms
+ */
+function headerimage_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, '_node_form') && isset($form['type']['#value']) && in_array($form['type']['#value'], variable_get('headerimage_node_type', array()), true) && user_access('maintain display conditions')) {
+    $form['headerimage'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Display conditions'),
+      '#description' => t('This node is displayed in a Header Image block when one of the conditions below are evaluated true.'),
+      '#collapsible' => true,
+      '#collapsed' => false,
+      '#group' => 'additional_settings',
+      '#weight' => 0,
+    );
+
+    $form['headerimage']['headerimage_block'] = array(
+      '#type' => 'select',
+      '#title' => t('Block name'),
+      '#description' => t('The block in which this node is displayed.'),
+      '#options' => headerimage_get_blocks(),
+      '#default_value' => isset($form['#node']->headerimage_block) ? $form['#node']->headerimage_block : '',
+      '#required' => true,
+      '#multiple' => false,
+    );
+
+    $form['headerimage']['headerimage_weight'] = array(
+      '#type' => 'weight',
+      '#title' => t('Condition weight'),
+      '#description' => t('Determines the order of in which the nodes are evaluated. The conditions of a node with a smaller weight will be evaluated first, those with a larger weight are evaluated later. A default image (the one displayed if the conditions of all other images fail) should have the largest weight: 10.'),
+      '#default_value' => isset($form['#node']->headerimage_weight) ? $form['#node']->headerimage_weight : '',
+      '#delta' => 10,
+    );
+
+    $condition_types = variable_get('headerimage_condition_types', array('nid' => 'nid'));
+    if (!empty($condition_types)) {
+      foreach ($condition_types as $type) {
+        if ($type != '0') {
+          $all_types = headerimage_get_condition_types();
+          $title = t("@name condition", array('@name' => $all_types[$type]));
+          $name = 'headerimage_condition_' . $type;
+          switch ($type) {
+            case 'nid':
+              $form['headerimage'][$name] = array(
+                '#type' => 'textarea',
+                '#title' => $title,
+                '#description' => t("Enter node id's separated by comma's."),
+                '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                '#wysiwyg' => false,
+                '#rows' => 4,
+              );
+              break;
+            case 'url':
+              $form['headerimage'][$name] = array(
+                '#type' => 'textarea',
+                '#title' => $title,
+                '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. %front is the front page.", array('%front' => '<front>')),
+                '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                '#wysiwyg' => false,
+                '#rows' => 4,
+              );
+              break;
+            case 'taxonomy':
+              $options = array();
+              if (module_exists('taxonomy')) {
+                $vocab = taxonomy_get_vocabularies();
+                if (!empty($vocab)) {
+                  foreach ($vocab as $v) {
+                    $taxonomy = taxonomy_get_tree($v->vid);
+                    if (!empty($taxonomy)) {
+                      foreach ($taxonomy as $tag) {
+                        $options[$tag->tid] = check_plain($tag->name);
+                      }
+                    }
+                  }
+                }
+                if (!empty($options)) {
+                  $description = t("One tag or multiple tags can be selected.");
+                } else {
+                  drupal_set_message(t("No vocabulary or tags defined. Please create vocabulary and tags or remove taxonomy from the !settings.", array('!settings' => l(t('Header Image settings'), 'admin/settings/headerimage/settings'))));
+                  break;
+                }
+                $form['headerimage'][$name] = array(
+                  '#type' => 'select',
+                  '#title' => $title,
+                  '#description' => $description,
+                  '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                  '#options' => $options,
+                  '#multiple' => true,
+                );
+              } else {
+                drupal_set_message(t("The taxonomy module is not enabled. Please enable the module or remove it from the !settings.", array('!settings' => l(t('Header Image settings'), 'admin/settings/headerimage/settings'))));
+              }
+              break;
+            case 'book':
+              if (module_exists('book')) {
+                $options = array();
+                $books = book_get_books();
+                if (count($books)) {
+                  $description = t("One book or multiple books can be selected.");
+                  foreach ($books as $key => $book) {
+                    $options[$key] = $book['title'];
+                  }
+                } else {
+                  $description = t("No books defined. Please create a book before using it as a condition.");
+                }
+                $form['headerimage'][$name] = array(
+                  '#type' => 'select',
+                  '#title' => $title,
+                  '#description' => $description,
+                  '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                  '#options' => $options,
+                  '#multiple' => true,
+                );
+              } else {
+                drupal_set_message(t("The book module is not enabled. Please enable the module or remove it from the !settings.", array('!settings' => l(t('Header Image settings'), 'admin/settings/headerimage/settings'))));
+              }
+              break;
+            case 'nodetype':
+              $nodes = node_type_get_types();
+              foreach ($nodes as $node) {
+                $nodetype[$node->type] = check_plain($node->name);
+              }
+              $form['headerimage'][$name] = array(
+                '#type' => 'select',
+                '#title' => $title,
+                '#description' => t('Select one or multiple content types'),
+                '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                '#options' => $nodetype,
+                '#multiple' => true,
+              );
+              break;
+            case 'php':
+              $form['headerimage'][$name] = array(
+                '#type' => 'textarea',
+                '#title' => $title,
+                '#description' => t("Enter PHP code between &lt;?php ?&gt; tags. Note that executing incorrect PHP-code can break your Drupal site."),
+                '#default_value' => isset($form['#node']->$name) ? $form['#node']->$name : '',
+                '#wysiwyg' => false,
+                '#rows' => 4,
+              );
+              break;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_node_update().
+ */
+function headerimage_node_update($node) {
+  if (!empty($node->type) && in_array($node->type, variable_get('headerimage_node_type', array()), true)) {
+    $conditions = headerimage_node_conditions($node);
+
+    // Check if entry already exists
+    $query = db_select('headerimage', 'h')->condition('h.nid', $node->nid);
+    $count = $query->countQuery()->execute()->fetchField();
+    if ($count) {
+      db_update('headerimage')->fields(array('block' => $node->headerimage_block, 'weight' => $node->headerimage_weight, 'conditions' => serialize($conditions)))->condition('nid', $node->nid)->execute();
+    } else {
+      db_insert('headerimage')->fields(array('nid' => $node->nid, 'block' => $node->headerimage_block, 'weight' => $node->headerimage_weight, 'conditions' => serialize($conditions)))->execute();
+    }
+  }
+}
+
+/**
+ * Implementation of hook_node_insert().
+ */
+function headerimage_node_insert($node) {
+  if (!empty($node->type) && in_array($node->type, variable_get('headerimage_node_type', array()), true)) {
+    $conditions = headerimage_node_conditions($node);
+    db_insert('headerimage')
+      ->fields(array(
+        'nid' => $node->nid,
+        'block' => $node->headerimage_block,
+        'weight' => $node->headerimage_weight,
+        'conditions' => serialize($conditions),
+      ))->execute();
+  }
+}
+
+/**
+ * Implementation of hook_node_load().
+ */
+function headerimage_node_load($nodes, $types) {
+  $valid_types = variable_get('headerimage_node_type', array());
+  foreach ($nodes as $nid => $node) {
+    // Only operate on valid types.
+    if (!in_array($node->type, $valid_types, true)) {
+      continue;
+    }
+
+    // Load header image properties from the database.
+    $result = db_select('headerimage', 'hi')->fields('hi')->condition('nid', $node->nid)->execute()->fetchObject();
+    if ($result) {
+      $node->headerimage_block = $result->block;
+      $node->headerimage_weight = $result->weight;
+      $conditions = unserialize($result->conditions);
+      if (!empty($conditions)) {
+        foreach ($conditions as $condition => $value) {
+          $name = 'headerimage_condition_' . $condition;
+          if (!isset($node->$name)) {
+            $node->$name = $value;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_node_delete().
+ */
+function headerimage_node_delete($node) {
+  if (!empty($node->type) && in_array($node->type, variable_get('headerimage_node_type', array()), true)) {
+    db_delete('headerimage')->condition('nid', $node->nid)->execute();
+  }
+}
+
+/**
+ * Get conditions for node operations.
+ */
+function headerimage_node_conditions($node) {
+  // Pack all conditions into one array
+  $conditions = variable_get('headerimage_condition_types', array('nid' => 'nid'));
+  if (!empty($conditions)) {
+    foreach ($conditions as $condition) {
+      if ($condition != '0') {
+        $name = 'headerimage_condition_' . $condition;
+        $conditions[$condition] = $node->$name;
+      }
+    }
+  }
+
+  return $conditions;
+}
+
+/**
+ * Implementation of hook_help
+ */
+function headerimage_help($path, $arg) {
+  $block_has_nodes = '';
+  $block_in_region = '';
+
+  switch ($path) {
+    case 'admin/help#headerimage':
+      // Determine the status of the installation
+      $type_is_set = count(variable_get('headerimage_node_type', array())) ? t('(DONE)') : t('(TO DO)');
+      $block_is_created = count(headerimage_get_blocks()) ? t('(DONE)') : t('(TO DO)');
+      foreach (headerimage_get_blocks() as $delta => $name) {
+        $block_has_nodes = db_select('headerimage', 'hi')
+            ->fields('hi', array('nid'))
+            ->condition('block', $delta)
+            ->execute()->fetchField();
+        if ($block_has_nodes)
+          break;
+      }
+      $block_has_nodes = $block_has_nodes ? t('(DONE)') : t('(TO DO)');
+      foreach (headerimage_get_blocks() as $delta => $name) {
+        $block_in_region = db_select('block', 'b')
+            ->fields('b', array('region'))
+            ->condition('module', 'headerimage')
+            ->condition('theme', variable_get('theme_default', 'bartik'))
+            ->condition('delta', $delta)
+            ->execute()->fetchField();
+        if ($block_in_region)
+          break;
+      }
+      $block_in_region = $block_in_region ? t('(DONE)') : t('(TO DO)');
+
+      $output = "<p>" . t('Header Image allows you to to display an image on selected pages. It can display one image at the front page, a different one at FAQ pages and yet another at all other pages.') . "</p>\n";
+      $output .= "<p>" . t('Visibility of each image, included in a node, can be determined by node ID, path, taxonomy, book, content type or custom PHP code. Header Image uses an arbitrary content type.') . "</p>\n";
+      $output .= "<p>" . t('Multiple images (nodes) can be displayed in one block, with each image having its own conditions. Using a weight per node the order of selection can be controlled.') . "</p>\n";
+      $output .= "<h2>" . t('Installation') . "</h2>\n";
+      $output .= "<p>" . t('<ol>
+<li>Set up <a href="!permissions">permissions</a>.</li>
+<li>Optionally <a href="!create_content_type">create a content type</a> which will contain the header image.</li>
+<li><a href="!set_node_type">Select a content type</a> to be used as Header Image. %status_type</li>
+<li><a href="!create_header_image_block">Create a Header Image block</a>. %status_create</li>
+<li>Create Header Image nodes. Select a Header Image block and set display conditions for each node. %status_assign</li>
+<li><a href="!assign_header_image_block">Assign the Header Image block</a> to a region. %status_region</li>
+</ol>', array(
+          '!permissions' => url('admin/user/permissions'),
+          '!create_content_type' => url('admin/content/types/add'),
+          '!set_node_type' => url('admin/settings/headerimage/settings'),
+          '%status_type' => $type_is_set,
+          '!create_header_image_block' => url('admin/settings/headerimage'),
+          '%status_create' => $block_is_created,
+          '!assign_header_image_block' => url('admin/build/block'),
+          '%status_assign' => $block_has_nodes,
+          '%status_region' => $block_in_region,
+          )
+        ) . "</p>\n";
+      $output .= "<p>" . t('For more information please read the <a href="@handbook">configuration and customization handbook</a> on Header Image.', array('@handbook' => 'http://drupal.org/node/201426/')) . "</p>\n";
+      return $output;
+  }
+}
+
+/**
+ * Return all condition types available
+ *
+ * @return
+ *   array of condition types
+ */
+function headerimage_get_condition_types() {
+  return array(
+    'nid' => t('Node ID'),
+    'url' => t('URL'),
+    'taxonomy' => t('Taxonomy'),
+    'book' => t('Book'),
+    'nodetype' => t('Content type'),
+    'php' => t('PHP'),
+  );
+}
+
+/**
+ * Return all Header Image blocks
+ *
+ * @return
+ *   array of Header Image blocks
+ */
+function headerimage_get_blocks() {
+  static $blocks;
+
+  if (!isset($blocks)) {
+    $blocks = array();
+    $result = db_select('headerimage_block', 'hi')->fields('hi')->execute();
+    foreach ($result as $block) {
+      if (!empty($block))
+        $blocks[$block->delta] = $block->title;
+    }
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function headerimage_theme() {
+  return array(
+    'headerimage_block' => array(
+      'variables' => array('node' => NULL, 'teaser' => NULL, 'unpublished' => NULL),
+      'template' => 'headerimage-block',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_preprocess_block().
+ */
+function headerimage_preprocess_block(&$vars) {
+  if (module_exists('contextual')) {
+    if ($vars['block']->module == 'headerimage') {
+      $vars['title_suffix']['contextual_links']['#contextual_links']['node'] = array('node', array($vars['block']->nid));
+    }
+  }
+}
+
+/**
+ * Process variables to format the headerimage block.
+ *
+ * $variables contains:
+ * - $node
+ * - $teaser: TRUE = display node as teaser; FALSE = display full node
+ *
+ * @see headerimage-block.tpl.php
+ */
+function template_preprocess_headerimage_block(&$vars) {
+  $node = $vars['node'];
+  if (module_exists('ds') && variable_get('headerimage_module_ds', false)) {
+    $vars['content'] = drupal_render($node);
+  } else {
+    $vars['content'] = drupal_render($node->content);
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function headerimage_views_api() {
+  return array(
+    'api' => 3,
+  );
+}

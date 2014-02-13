@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the systeminfo module.
+ */
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function systeminfo_uninstall() {
+
+  // Overview
+  variable_del('systeminfo_overview_modules_datestamp');
+  variable_del('systeminfo_overview_themes_datestamp');
+  // Drupal
+  variable_del('systeminfo_drupal_modules_sort');
+  variable_del('systeminfo_drupal_themes_sort');
+  // PHP
+  variable_del('systeminfo_php_phpinfo_parameter');
+  // Database
+  variable_del('systeminfo_database_tables_display');
+  variable_del('systeminfo_database_tables_tables');
+  variable_del('systeminfo_database_tables_rows');
+  variable_del('systeminfo_database_mysql_show_status_display');
+  variable_del('systeminfo_database_mysql_show_table_status_display');
+  variable_del('systeminfo_database_mysql_show_variables_display');
+  variable_del('systeminfo_database_pgsql_show_all_display');
+}
+
+
+/**
+ * System information updates:
+ */
+
+/**
+ * Delete unnessary variables.
+ */
+function systeminfo_update_7300() {
+
+  variable_del('systeminfo_database_mysqli_show_status_display');
+  variable_del('systeminfo_database_mysqli_show_table_status_display');
+  variable_del('systeminfo_database_mysqli_show_variables_display');
+
+  return array();
+}

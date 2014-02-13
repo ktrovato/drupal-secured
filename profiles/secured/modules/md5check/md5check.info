@@ -1,0 +1,10 @@
+name = MD5 Check
+description = "Security module for monitor changes in modules files"
+core = 7.x
+package = Security
+; Information added by drupal.org packaging script on 2011-04-28
+version = "7.x-1.0"
+core = "7.x"
+project = "md5check"
+datestamp = "1303994516"
+

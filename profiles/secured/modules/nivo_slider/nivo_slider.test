@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Tests for nivo_slider.module.
+ */
+
+/**
+ * Defines a base class for testing the Nivo Slider module.
+ */
+class NivoSliderWebTestCase extends DrupalWebTestCase {
+  function setUp() {
+    parent::setUp('libraries', 'nivo_slider', 'jquery_update');
+    $web_user = $this->drupalCreateUser(array('administer nivo slider'));
+    $this->drupalLogin($web_user);
+  }
+
+  /**
+   * Retrieves a sample image file.
+   */
+  function getTestImage() {
+    // Get a file to upload.
+    $file = current($this->drupalGetTestFiles('image'));
+
+    return $file;
+  }
+}
+
+/**
+ * Test creating, editing and deleting slides.
+ */
+class SlideTest extends NivoSliderWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Slides',
+      'description' => 'Test creating, editing and deleting slides.',
+      'group' => 'Nivo Slider',
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Add a new slide and ensure that it was created successfully.
+   */
+  function testSlideTest() {
+    // Check to ensure that the slider is not displayed.
+    $this->drupalGet('<front>');
+    $this->assertNoRaw('//div[@id="slider"]', 'There is no slider on the front page.');
+
+    // Load the slider slides administration page.
+    $this->drupalGet('admin/structure/nivo-slider');
+    $this->assertResponse(200, t('The privileged user can access the slider slides administration page.'));
+
+    $file = $this->getTestImage();
+
+    // Create five new slide.
+    for ($i = 0; $i <= 5; $i++) {
+      $edit = array();
+      $edit['files[upload]'] = drupal_realpath($file->uri);
+      $this->drupalPost('admin/structure/nivo-slider', $edit, t('Save configuration'));
+      $this->assertText(t('The configuration options have been saved.'));
+    }
+
+    // Check to ensure that the slider is displayed.
+    $this->drupalGet('<front>');
+    $elements = $this->xpath('//div[@id="slider"]');
+    $this->assertEqual(count($elements), 1, t('There is exactly one slider on the front page.'));
+
+    // Delete the five existing slides.
+    for ($i = 5; $i <= 0; $i--) {
+      $edit = array();
+      $edit["images[{$i}][delete]"] = TRUE;
+      $this->drupalPost('admin/structure/nivo-slider', $edit, t('Save configuration'));
+      $this->assertText(t('The configuration options have been saved.'));
+    }
+  }
+}
+
+/**
+ * Test configuring slide options.
+ */
+class OptionTest extends NivoSliderWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Options',
+      'description' => 'Test configuring slider options.',
+      'group' => 'Nivo Slider',
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Add a new slide and ensure that it was created successfully.
+   */
+  function testOptionTest() {
+    $file = $this->getTestImage();
+
+    // Create a new slide.
+    $edit = array();
+    $edit['files[upload]'] = drupal_realpath($file->uri);
+    $this->drupalPost('admin/structure/nivo-slider', $edit, t('Save configuration'));
+
+    // Load the slider options administration page.
+    $this->drupalGet('admin/structure/nivo-slider/options');
+    $this->assertResponse(200, t('The privileged user can access the slider options administration page.'));
+
+    $themes = array('bar', 'dark', 'default', 'light');
+
+    // Test to ensure that the slider theme can be changed.
+    foreach ($themes as $theme) {
+      $edit = array();
+      $edit['nivo_slider_theme'] = $theme;
+      $this->drupalPost('admin/structure/nivo-slider/options', $edit, t('Save configuration'));
+
+      // Check to ensure that the slider is displayed with the proper theme.
+      $this->drupalGet('<front>');
+      $elements = $this->xpath('//div[@class="slider-wrapper theme-' . $theme . '"]');
+      $this->assertEqual(count($elements), 1, t('There is exactly one slider with the current theme on the front page.'));
+    }
+  }
+}

@@ -1,0 +1,14 @@
+name = Content Security Policy
+description = An implementation of the <a href="https://wiki.mozilla.org/Security/CSP">Content Security Policy</a> specification.
+core = 7.x
+package = Other
+configure = admin/config/people/content-security-policy
+files[] = content_security_policy.module
+files[] = content_security_policy.install
+files[] = content_security_policy.admin.inc
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "content_security_policy"
+datestamp = "1380567046"
+
