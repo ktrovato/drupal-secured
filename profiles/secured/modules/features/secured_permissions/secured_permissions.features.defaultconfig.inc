@@ -1073,15 +1073,6 @@ function secured_permissions_defaultconfig_user_default_permissions() {
     'module' => 'node',
   );
 
-  // Exported permission: 'delete terms in tags'.
-  $permissions['delete terms in tags'] = array(
-    'name' => 'delete terms in tags',
-    'roles' => array(
-      'developer' => 'developer',
-    ),
-    'module' => 'taxonomy',
-  );
-
   // Exported permission: 'display drupal links'.
   $permissions['display drupal links'] = array(
     'name' => 'display drupal links',
@@ -1241,14 +1232,6 @@ function secured_permissions_defaultconfig_user_default_permissions() {
     'module' => 'revisioning',
   );
 
-  // Exported permission: 'edit terms in tags'.
-  $permissions['edit terms in tags'] = array(
-    'name' => 'edit terms in tags',
-    'roles' => array(
-      'developer' => 'developer',
-    ),
-    'module' => 'taxonomy',
-  );
 
   // Exported permission: 'exclude any node title'.
   $permissions['exclude any node title'] = array(

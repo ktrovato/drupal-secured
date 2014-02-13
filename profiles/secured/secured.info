@@ -62,6 +62,10 @@ dependencies[] = date_api
 dependencies[] = date_context
 dependencies[] = date_popup
 dependencies[] = date_tools
+; Development
+dependencies[] = devel
+dependencies[] = profiler_builder
+dependencies[] = hacked
 ; Fields
 dependencies[] = email
 dependencies[] = entityreference

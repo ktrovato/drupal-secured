@@ -12,7 +12,7 @@
  * @see system_install()
  */
 function secured_install() {
-  // Enable the default theme.
+// Enable the default theme.
   db_update('system')
     ->fields(array('status' => 1))
     ->condition('type', 'theme')
