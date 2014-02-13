@@ -164,7 +164,6 @@ dependencies[] = custom_content_types
 dependencies[] = textbook_editor
 dependencies[] = textbook_section_508
 dependencies[] = textbook_templates
-dependencies[] = secured_permissions
 
 ; ----------
 ; Optional
