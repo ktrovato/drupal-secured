@@ -298,9 +298,6 @@ function secured_install() {
 	variable_set('honeypot_form_contact_personal_form', '1');
 	variable_set('honeypot_form_webforms', '1');
 
-//Set filesystem paths
-	variable_set('file_private_path', '../priv');
-	variable_set('file_temporary_path', '../tmp');
 	
 //IMCE Settings
 	variable_set('imce_settings_replace', '1');
