@@ -6,7 +6,7 @@
  */
 if (!function_exists("system_form_install_configure_form_alter")) {
   function system_form_install_configure_form_alter(&$form, $form_state) {
-    $form['site_information']['site_name']['#default_value'] = 'Drupal Secured Site’;
+    $form['site_information']['site_name']['#default_value'] = 'Drupal Secured Site';
   }
 }
 
