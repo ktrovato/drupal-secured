@@ -1,121 +1,175 @@
-name = Drupal Secured
-description = Secured drupal environment developed by <a href="http://pdiwebdesign.com" target=_blank>Peerless Design.</a>
-version = 7.x-1.0
-core = 7.x
-exclusive = TRUE
-;modified version from standard profile. commented out overlay, comments, color
-dependencies[] = block
-dependencies[] = contextual
-dependencies[] = dashboard
-dependencies[] = help
-dependencies[] = image
-dependencies[] = list
-dependencies[] = menu
-dependencies[] = number
-dependencies[] = options
-dependencies[] = path
-dependencies[] = taxonomy
-dependencies[] = dblog
-dependencies[] = search
-dependencies[] = shortcut
-dependencies[] = toolbar
-dependencies[] = field_ui
-dependencies[] = file
-dependencies[] = rdf
-dependencies[] = contact
-;dependencies[] = overlay
-dependencies[] = comment
-;dependencies[] = color
-;custom core. turn these on
-dependencies[] = statistics
-dependencies[] = syslog
-dependencies[] = trigger
-;contrib REQUIRED
-dependencies[] = views
-dependencies[] = views_ui
-dependencies[] = ctools
-dependencies[] = backup_migrate
-dependencies[] = better_formats
-dependencies[] = block_class
-dependencies[] = context
-dependencies[] = context_ui
-dependencies[] = date
-dependencies[] = date_tools
-dependencies[] = date_popup
-dependencies[] = date_context
-dependencies[] = email
-dependencies[] = entity
-dependencies[] = entityreference
-dependencies[] = features
-dependencies[] = field_extractor
-dependencies[] = field_group
-dependencies[] = inline_entity_form
-dependencies[] = json2
-dependencies[] = libraries
-dependencies[] = menu_block
-dependencies[] = rules
-dependencies[] = rules_admin
-dependencies[] = link
-dependencies[] = menu_attributes
-dependencies[] = panels
-dependencies[] = redirect
-dependencies[] = rel_to_abs
-dependencies[] = special_menu_items
-dependencies[] = token
-dependencies[] = variable
-dependencies[] = views_bulk_operations
-dependencies[] = content_audit
-dependencies[] = diff
-dependencies[] = enforce_revlog
-dependencies[] = menu_breadcrumb
-dependencies[] = transliteration
+; Packaging information for secured
+name = "Drupal Secured"
+description = "Secured drupal environment developed by <a href="http://pdiwebdesign.com" target=_blank>Peerless Design.</a>"
+exclusive = "1"
+core = "7.x"
+version = "7.x-1.0"
+; ----------
+; Dependencies
+; ----------
+; Accessibility
+dependencies[] = accessibility
+dependencies[] = accessibility_content
+dependencies[] = accessibility_wysiwyg
+; Administration
+dependencies[] = admin_menu
+dependencies[] = admin_menu_toolbar
 dependencies[] = module_filter
-dependencies[] = revisioning
-dependencies[] = revisioning_ux
-dependencies[] = ckeditor
-dependencies[] = ckeditor_link
-dependencies[] = crumbs
-dependencies[] = exclude_node_title
-dependencies[] = extlink
-dependencies[] = imce
-dependencies[] = jquery_update
-dependencies[] = pathauto
-dependencies[] = pathologic
-dependencies[] = site_map
-dependencies[] = metatag
-dependencies[] = context_metadata
-dependencies[] = xmlsitemap
-dependencies[] = views_slideshow
-dependencies[] = systeminfo
-dependencies[] = filefield_sources
-dependencies[] = webform
-dependencies[] = css3pie
+; Advanced CSS/JS Aggregation
 dependencies[] = advagg
 dependencies[] = advagg_bundler
 dependencies[] = advagg_css_compress
 dependencies[] = advagg_js_compress
 dependencies[] = advagg_validator
-
-;Custom
-dependencies[] = custom_secure
-dependencies[] = custom_content_types
-
-;contrib security REQUIRED
-dependencies[] = honeypot
-dependencies[] = security_review
-dependencies[] = session_limit
-dependencies[] = genpass
-dependencies[] = login_security
-dependencies[] = password_policy
+; Chaos tool suite
+dependencies[] = ctools
+; Context
+dependencies[] = context
+dependencies[] = context_ui
+; Core
+dependencies[] = block
+dependencies[] = comment
+dependencies[] = contact
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = dblog
+dependencies[] = field
+dependencies[] = field_sql_storage
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = node
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = rdf
+dependencies[] = search
+dependencies[] = statistics
+dependencies[] = syslog
+dependencies[] = system
+dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = trigger
+dependencies[] = update
+dependencies[] = user
+; Date/Time
+dependencies[] = date
+dependencies[] = date_api
+dependencies[] = date_context
+dependencies[] = date_popup
+dependencies[] = date_tools
+; Fields
+dependencies[] = email
+dependencies[] = entityreference
+dependencies[] = field_group
+dependencies[] = filefield_sources
+dependencies[] = inline_entity_form
+dependencies[] = link
+; Input filters
+dependencies[] = pathologic
+dependencies[] = rel_to_abs
+dependencies[] = typogrify
+dependencies[] = video_filter
+; Media
+dependencies[] = imce
+; Monitoring
+dependencies[] = systeminfo
+; Other
 dependencies[] = autologout
-dependencies[] = flood_control
-dependencies[] = username_enumeration_prevention
-dependencies[] = pci_update
-dependencies[] = hacked
-dependencies[] = htmlpurifier
-dependencies[] = paranoia
+dependencies[] = backup_migrate
+dependencies[] = better_formats
+dependencies[] = block_class
+dependencies[] = content_audit
 dependencies[] = content_security_policy
 dependencies[] = content_security_policy_reporting
+dependencies[] = context_metadata
+dependencies[] = css3pie
+dependencies[] = diff
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = exclude_node_title
+dependencies[] = field_extractor
+dependencies[] = flood_control
+dependencies[] = genpass
+dependencies[] = htmlpurifier
+dependencies[] = json2
+dependencies[] = libraries
+dependencies[] = login_security
+dependencies[] = masquerade
+dependencies[] = menu_attributes
+dependencies[] = menu_block
+dependencies[] = menu_breadcrumb
+dependencies[] = paranoia
+dependencies[] = password_policy
+dependencies[] = pathauto
+dependencies[] = pci_update
+dependencies[] = redirect
+dependencies[] = revisioning
+dependencies[] = revisioning_ux
+dependencies[] = security_review
+dependencies[] = session_limit
+dependencies[] = site_map
+dependencies[] = special_menu_items
+dependencies[] = strongarm
+dependencies[] = token
+dependencies[] = transliteration
+dependencies[] = username_enumeration_prevention
+; PDI Custom
+dependencies[] = custom_secure
+; Panels
+dependencies[] = panels
+; Performance and scalability
+dependencies[] = apc
+dependencies[] = entitycache
+dependencies[] = filecache
+; Rules
+dependencies[] = rules
+dependencies[] = rules_admin
+; SEO
+dependencies[] = metatag
+; Spam control
+dependencies[] = honeypot
+; Textbook
+dependencies[] = textbook
+; User interface
+dependencies[] = ckeditor_link
+dependencies[] = enforce_revlog
+dependencies[] = extlink
+dependencies[] = imce_wysiwyg
+dependencies[] = jquery_update
+dependencies[] = wysiwyg
+dependencies[] = wysiwyg_template
+; Variable
+dependencies[] = variable
+; Views
+dependencies[] = views
+dependencies[] = views_bulk_operations
+dependencies[] = views_slideshow
+dependencies[] = views_ui
+; Webform
+dependencies[] = webform
+; XML sitemap
+dependencies[] = xmlsitemap
+; configuration
+dependencies[] = defaultconfig
+; menu
+dependencies[] = crumbs
+; Features
+dependencies[] = features
+dependencies[] = custom_content_types
+dependencies[] = textbook_editor
+dependencies[] = textbook_section_508
+dependencies[] = textbook_templates
+dependencies[] = secured_permissions
+
+; ----------
+; Optional
+; ----------
+
 ;dependencies[] = securelogin**
 
 ;contrib OPTIONAL
@@ -124,7 +178,6 @@ dependencies[] = content_security_policy_reporting
 ;dependencies[] = navbar
 ;dependencies[] = services
 ;dependencies[] = customfilter
-dependencies[] = masquerade
 ;dependencies[] = mailsystem
 ;dependencies[] = htmlmail
 ;dependencies[] = mimemail
@@ -149,7 +202,6 @@ dependencies[] = masquerade
 ;dependencies[] = cors
 
 ;contrib dev
-dependencies[] = devel
 ;dependencies[] = node_convert
 
 
