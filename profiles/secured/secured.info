@@ -168,6 +168,8 @@ dependencies[] = custom_content_types
 dependencies[] = textbook_editor
 dependencies[] = textbook_section_508
 dependencies[] = textbook_templates
+dependencies[] = secured_roles
+dependencies[] = secured_filters
 dependencies[] = secured_permissions
 
 ; ----------

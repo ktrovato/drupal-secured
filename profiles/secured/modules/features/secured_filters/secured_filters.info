@@ -1,0 +1,15 @@
+name = Secured filters
+description = Input formats default configuration
+core = 7.x
+package = Secured Features
+dependencies[] = ckeditor_link
+dependencies[] = features
+dependencies[] = filter
+dependencies[] = htmlpurifier
+dependencies[] = pathologic
+dependencies[] = rel_to_abs
+dependencies[] = transliteration
+features[features_api][] = api:2
+features[filter][] = filtered_html
+features[filter][] = full_html
+project path = profiles/secured/modules/features

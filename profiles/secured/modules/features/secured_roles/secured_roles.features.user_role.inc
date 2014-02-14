@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * secured_permissions.features.user_role.inc
+ * secured_roles.features.user_role.inc
  */
 
 /**
  * Implements hook_user_default_roles().
  */
-function secured_permissions_user_default_roles() {
+function secured_roles_user_default_roles() {
   $roles = array();
 
   // Exported role: administrator.

@@ -181,7 +181,3 @@ features[defaultconfig][] = user_default_permissions:view revision status messag
 features[defaultconfig][] = user_default_permissions:view revisions
 features[defaultconfig][] = user_default_permissions:view the administration theme
 features[features_api][] = api:2
-features[user_role][] = administrator
-features[user_role][] = contributor
-features[user_role][] = developer
-features[user_role][] = editor

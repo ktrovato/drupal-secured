@@ -19,106 +19,6 @@ function secured_install() {
     ->condition('name', 'ghp_bootstrap')
     ->execute();
   variable_set('theme_default', 'custom_bootstrap');
-  // Add text formats.
-  $filtered_html_format = array(
-    'format' => 'filtered_html',
-    'name' => 'Filtered HTML',
-    'weight' => -1,
-    'filters' => array(
-      // URL filter.
-      'filter_url' => array(
-        'weight' => 0,
-        'status' => 1,
-      ),
-      // HTML filter.
-      'filter_html' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Line break filter.
-      'filter_autop' => array(
-        'weight' => 2,
-        'status' => 1,
-      ),
-      // HTML corrector filter.
-      'filter_htmlcorrector' => array(
-        'weight' => 10,
-        'status' => 1,
-      ),
-      // CKEditor Links.
-      'ckeditor_link_filter' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on rel to absolute filter.
-      'rel_to_abs' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on transliteration filter.
-      'transliteration' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on pathologic filter.
-      'pathologic' => array(
-        'weight' => 2,
-        'status' => 1,
-      ),
-      // Turn on html purifier filter.
-      'htmlpurifier_basic' => array(
-        'weight' => -1,
-        'status' => 1,
-      ),
-    ),
-  );
-  $filtered_html_format = (object) $filtered_html_format;
-  filter_format_save($filtered_html_format);
-
-  $full_html_format = array(
-    'format' => 'full_html',
-    'name' => 'Full HTML',
-    'weight' => -2,
-    'filters' => array(
-      // URL filter.
-      'filter_url' => array(
-        'weight' => 0,
-        'status' => 1,
-      ),
-      // Line break filter.
-      'filter_autop' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // HTML corrector filter.
-      'filter_htmlcorrector' => array(
-        'weight' => 10,
-        'status' => 1,
-      ),
-      // CKEditor Links.
-      'ckeditor_link_filter' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on rel to absolute filter.
-      'rel_to_abs' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on transliteration filter.
-      'transliteration' => array(
-        'weight' => 1,
-        'status' => 1,
-      ),
-      // Turn on pathologic filter.
-      'pathologic' => array(
-        'weight' => 2,
-        'status' => 1,
-      ),
-    ),
-  );
-  $full_html_format = (object) $full_html_format;
-  filter_format_save($full_html_format);
 
   // Enable some standard blocks.
   $default_theme = variable_get('theme_default', 'ghp_bootstrap');
@@ -266,8 +166,8 @@ function secured_install() {
   //Disable login failure message
   variable_set('login_security_disable_core_login_error', '1');
 
- //Password Policy
- //Set the login expiration in password policy to allow users to change not just block
+  //Password Policy
+  //Set the login expiration in password policy to allow users to change not just block
   variable_set('password_policy_block', '1');
   //Set error not to display
   variable_set('error_level', '0');
@@ -392,7 +292,7 @@ function secured_install() {
   //Set this as the developer role.
   variable_set('user_admin_role', $dev->rid);
 
-// Assign user 1 the "developer" role.
+  // Assign user 1 the "developer" role.
   db_insert('users_roles')
     ->fields(array('uid' => 1, 'rid' => $dev->rid))
     ->execute();
