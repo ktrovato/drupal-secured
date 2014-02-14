@@ -7,3 +7,10 @@ This distribution is actively maintained by Peerless design, inc. New features a
 Planned releases for Higher Ed will be available soon. For a full set of features and configurations see the readme.txt file. Install is easy and themes are just provided as a starting point and can be replaced or customized. This distribution uses Drupal and industry best practices to ensure the integrity of the project.
 
 Always looking for co-maintainers with a passion for Drupal and security.
+
+Post Install
+
+Add the following to the settings.php. Make any necessary changes to path to suit the environmet.
+
+$conf['cache_backends'] = array('sites/all/modules/filecache/filecache.inc');
+$conf['cache_default_class'] = 'DrupalFileCache';

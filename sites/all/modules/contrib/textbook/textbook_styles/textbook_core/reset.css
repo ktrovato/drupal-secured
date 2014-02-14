@@ -1,5 +1,5 @@
 /*
-  CSS Reset Style Guide
+  CSS Reset Style Guide 
   inspiration by http://www.blueprintcss.org/ reset.css and typography.css
 */
 
@@ -18,7 +18,6 @@ h1, h2, h3, h4, h5, h6 {
 #region-content h5,
 #region-content h6  {
   font-family: 'Open Sans', serif;
-  box-shadow: none;
 }
 
 /* better readability to node content area across screens */
@@ -51,10 +50,10 @@ article.node, div.node {
   }
 }
 
-p, article.node li, article.node p, article.node p, div.node p {
+p, article.node ul, article.node ol, article.node p, article.node p, div.node p {
   font-family: 'Open Sans', serif;
-  font-size: 1.3em;
-  line-height: 1.7em;
+  font-size: 1.4em;
+  line-height: 1.8em;
 }
 
 /* highliter color */
@@ -119,9 +118,4 @@ article.node sup, article.node sub, div.node sup, div.node sub {line-height:0;fo
 /* edit fixes for compat with some admin themes */
 ul.vertical-tabs-list, ul.primary-tabs, ul.secondary-tabs {
   list-style-type:none;
-}
-/* tab style fix for omega default */
-.tabs.primary {
-  border-bottom: none;
-  height: auto;
 }

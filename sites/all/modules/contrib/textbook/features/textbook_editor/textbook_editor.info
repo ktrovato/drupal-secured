@@ -26,3 +26,10 @@ features[variable][] = ckeditor_link_type_name
 features[variable][] = ckeditor_link_type_selected
 features[variable][] = imce_profiles
 features[wysiwyg][] = textbook_editor
+
+; Information added by  packaging script on 2013-11-20
+version = "7.x-4.0"
+core = "7.x"
+project = "textbook"
+datestamp = "1384919350"
+

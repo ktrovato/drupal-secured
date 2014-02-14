@@ -12,9 +12,9 @@ define('TEXTBOOK_DEFAULT_SET', 'textbook_core');
 function textbook_menu() {
   $items = array();
   $items['admin/config/content/textbook'] = array(
-    'title' => 'Textbook style settings',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('textbook_admin_settings'),
+    'title' => 'Textbook style settings', 
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array('textbook_admin_settings'), 
     'access arguments' => array('administer site configuration'),
     'file' => 'textbook.admin.inc',
   );
@@ -25,16 +25,10 @@ function textbook_menu() {
  * Implementation of hook_page_alter().
  */
 function textbook_page_alter() {
-  // include style guide sheets on everything not an admin path
-  if (!path_is_admin(current_path())) {
-    $reset = TRUE;
-    // only apply reset if we are on the node itself. this avoids conflicts
-    // with admin themes thanks to the aggressive reset that's included
-    if (arg(0) == 'node' && arg(2) == 'edit') {
-      $reset = FALSE;
-    }
+  // include style guide sheets on nodes
+  if (arg(0) != 'admin') {
     // apply styles based on the default
-    _textbook_apply_style('node', $reset);
+    _textbook_apply_style('node');
   }
 }
 
@@ -68,7 +62,7 @@ function textbook_html_head_alter(&$head_elements) {
 /**
  * Callback to add in styles.
  */
-function _textbook_apply_style($type = 'node', $reset = TRUE) {
+function _textbook_apply_style($type = 'node') {
   $locations = array();
   // load all styles from hook
   $styles = _textbook_load_styles();
@@ -78,7 +72,7 @@ function _textbook_apply_style($type = 'node', $reset = TRUE) {
   $style = $styles[$active_style];
   $api_items = array('css', 'js');
   // include reset if site allows it
-  if (variable_get('textbook_reset', TEXTBOOK_RESET_DEFAULT) && $reset) {
+  if (variable_get('textbook_reset', TEXTBOOK_RESET_DEFAULT)) {
     $api_items[] = 'reset';
   }
   // loop through defined items
