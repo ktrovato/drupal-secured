@@ -16,11 +16,11 @@ dependencies[] = admin_menu
 dependencies[] = admin_menu_toolbar
 dependencies[] = module_filter
 ; Advanced CSS/JS Aggregation
-dependencies[] = advagg
-dependencies[] = advagg_bundler
-dependencies[] = advagg_css_compress
-dependencies[] = advagg_js_compress
-dependencies[] = advagg_validator
+;dependencies[] = advagg
+;dependencies[] = advagg_bundler
+;dependencies[] = advagg_css_compress
+;dependencies[] = advagg_js_compress
+;dependencies[] = advagg_validator
 ; Chaos tool suite
 dependencies[] = ctools
 ; Context

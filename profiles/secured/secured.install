@@ -196,10 +196,10 @@ function secured_install() {
   variable_set('page_compression', '1');
 
   //AdvAgg settings
-  variable_set('advagg_combine_css_media', '1');
-  variable_set('advagg_ie_css_selector_limiter', '1');
-  variable_set('advagg_combine_css_media', '1');
-  variable_set('advagg_combine_css_media', '1');
+  //variable_set('advagg_combine_css_media', '1');
+  //variable_set('advagg_ie_css_selector_limiter', '1');
+  //variable_set('advagg_combine_css_media', '1');
+  //variable_set('advagg_combine_css_media', '1');
 
   // Default "Basic page" to not be promoted and have comments disabled.
   variable_set('node_options_page', array('status'));
