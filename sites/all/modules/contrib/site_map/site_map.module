@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * site_map.module
@@ -7,6 +6,7 @@
  * Original author: Nic Ivy
  * Now maintained by Fredrik Jonsson fredrik at combonet dot se
  */
+
 
 /**
  * Implements hook_permission().
@@ -18,6 +18,7 @@ function site_map_permission() {
     ),
   );
 }
+
 
 /**
  * Implements hook_theme().
@@ -40,7 +41,11 @@ function site_map_theme() {
       'file' => 'site_map.theme.inc',
     ),
     'site_map_box' => array(
-      'variables' => array('title' => NULL, 'content' => NULL, 'attributes' => array()),
+      'variables' => array(
+        'title' => NULL,
+        'content' => NULL,
+        'attributes' => array(),
+      ),
       'file' => 'site_map.theme.inc',
     ),
     'site_map_feed_icon' => array(
@@ -61,6 +66,7 @@ function site_map_theme() {
     ),
   );
 }
+
 
 /**
  * Implements hook_menu().
@@ -85,6 +91,7 @@ function site_map_menu() {
   return $items;
 }
 
+
 /**
  * Implements hook_variable_info().
  */
@@ -95,7 +102,12 @@ function site_map_variable_info($options) {
     'description' => t('Page title that will be used on the <a href="@link">site map page</a>.', array('@link' => url('sitemap'))),
     'default' => 'Site map',
   );
-
+  $variable['site_map_message'] = array(
+    'type' => 'text_format',
+    'title' => t('Site map message'),
+    'description' => t('Message that will be used on the <a href="@link">site map page</a>.', array('@link' => url('sitemap'))),
+    'default' => 'The site map provides an overview of all website content.',
+  );
   $variable['site_map_rss_front'] = array(
     'type' => 'string',
     'title' => t('RSS feed for front page', array(), $options),
@@ -105,6 +117,7 @@ function site_map_variable_info($options) {
 
   return $variable;
 }
+
 
 /**
  * Implements hook_block_info().
@@ -116,6 +129,7 @@ function site_map_block_info() {
 
   return $block;
 }
+
 
 /**
  * Implements hook_block_view().
@@ -147,6 +161,7 @@ function site_map_block_view($delta = '') {
   }
 }
 
+
 /**
  * Menu callback for the site map.
  */
@@ -160,9 +175,17 @@ function site_map_page() {
   return theme('site_map');
 }
 
+
+/**
+ * Menu callback for the site map front page.
+ *
+ * @return string
+ *   Returns HTML string for front page site map.
+ */
 function _site_map_front_page() {
   $output = '';
   $class = array();
+  $options = array();
   $title = t('Front page');
   $output = l(t('Front page of %sn', array('%sn' => variable_get('site_name', 'Drupal'))), '<front>', array('html' => TRUE));
 
@@ -179,19 +202,30 @@ function _site_map_front_page() {
       $output = $rss_link . ' ' . $output;
     }
   }
+  _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
 
   $class[] = 'site-map-box-front';
   $attributes = array('class' => $class);
 
-  return theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+  return theme('site_map_box', array(
+    'title' => $title,
+    'content' => $output,
+    'attributes' => $attributes,
+    'options' => $options,
+  ));
 }
 
+
 /**
- * Render the latest blog authors
+ * Render the latest blogs.
+ *
+ * @return string
+ *   Returns HTML string of site map for blogs.
  */
 function _site_map_blogs() {
   $output = '';
   $class = array();
+  $options = array();
   if (module_exists('blog')) {
     $title = t('Blogs');
     $output = '<div class="description">' . t('Community blog and recent blog authors at %sn.', array('%sn' => variable_get('site_name', 'Drupal'))) . '</div>';
@@ -207,18 +241,32 @@ function _site_map_blogs() {
         $blog_link = $rss_link . ' ' . $blog_link;
       }
     }
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
+
     $blogs = array();
     $blogs[] = $blog_link;
 
-    $sql = "SELECT DISTINCT u.uid, u.name, count(u.uid) AS numitems
-      FROM {node} n
-      INNER JOIN {users} u ON u.uid = n.uid
-      WHERE n.type = 'blog' AND n.status = 1
-      GROUP BY u.uid, u.name
-      ORDER BY numitems DESC, u.name";
-    $result = db_query_range($sql, 0, 10);
+    $query = db_select('node', 'n');
+    $query->join('users', 'u', 'u.uid = n.uid');
+    $query->fields('u', array('uid', 'name'));
+    $query->addExpression('COUNT(u.uid)', 'numitems');
+    $query
+      ->condition('n.type', 'blog')
+      ->condition('n.status', 1)
+      ->groupBy('u.uid')
+      ->groupBy('u.name')
+      ->orderBy('numitems', 'DESC')
+      ->orderBy('u.name', 'ASC')
+      ->range(0, 10);
+    $query->addTag('node_access');
+    $query->distinct();
+    $result = $query->execute();
     foreach ($result as $blog) {
-      $blog_item = t('<a href="@url">@name\'s blog</a> (@num_items)', array('@url' => "blog/$blog->uid", '@name' => $blog->name, '@num_items' => $blog->numitems));
+      $blog_item = t('<a href="@url">@name\'s blog</a> (@num_items)', array(
+        '@url' => "blog/$blog->uid",
+        '@name' => $blog->name,
+        '@num_items' => $blog->numitems,
+      ));
       if (variable_get('site_map_show_rss_links', 1) != 0) {
         $rss_link = theme('site_map_feed_icon', array('url' => "blog/$blog->uid/feed"));
         if (variable_get('site_map_show_rss_links', 1) == 1) {
@@ -235,15 +283,27 @@ function _site_map_blogs() {
     $attributes = array('class' => $class);
 
     $output .= theme('item_list', array('items' => $blogs));
-    $output = theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+    $output = theme('site_map_box', array(
+      'title' => $title,
+      'content' => $output,
+      'attributes' => $attributes,
+      'options' => $options,
+    ));
   }
 
   return $output;
 }
 
+/**
+ * Render the latest maps for audio.
+ *
+ * @return string
+ *   Returns HTML string of site map for audio.
+ */
 function _site_map_audio() {
   $output = '';
   $class = array();
+  $options = array();
   if (module_exists('audio')) {
     $title = t('Audio');
     $output = l(t('Audio content'), 'audio');
@@ -257,19 +317,33 @@ function _site_map_audio() {
         $output = $rss_link . ' ' . $output;
       }
     }
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
 
     $class[] = 'site-map-box-audio';
     $attributes = array('class' => $class);
 
-    $output = theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+    $output = theme('site_map_box', array(
+      'title' => $title,
+      'content' => $output,
+      'attributes' => $attributes,
+      'options' => $options,
+    ));
   }
 
   return $output;
 }
 
+
+/**
+ * Render the latest maps for video.
+ *
+ * @return string
+ *   Returns HTML string of site map for video.
+ */
 function _site_map_video() {
   $output = '';
   $class = array();
+  $options = array();
   if (module_exists('video')) {
     $title = t('Video');
     $output = l(t('Video content'), 'video');
@@ -283,21 +357,32 @@ function _site_map_video() {
         $output = $rss_link . '  ' . $output;
       }
     }
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
 
     $class[] = 'site-map-box-video';
     $attributes = array('class' => $class);
 
-    $output = theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+    $output = theme('site_map_box', array(
+      'title' => $title,
+      'content' => $output,
+      'attributes' => $attributes,
+      'options' => $options,
+    ));
   }
 
   return $output;
 }
 
+
 /**
- * Render books
+ * Render the latest maps for books.
+ *
+ * @return string
+ *   Returns HTML string of site map for video.
  */
 function _site_map_books() {
   $output = '';
+  $options = array();
   $book_titles = array();
   $mlid = array_filter(variable_get('site_map_show_books', array()));
 
@@ -323,6 +408,7 @@ function _site_map_books() {
         }
       }
     }
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
 
     if (!$books_expanded && !empty($book_titles)) {
       $output .= theme('item_list', array('items' => $book_titles));
@@ -331,37 +417,63 @@ function _site_map_books() {
     if (!empty($output)) {
       $attributes = array('class' => array('site-map-box-book'));
 
-      $output = theme('site_map_box', array('title' => $title, 'content' => $description . $output, 'attributes' => $attributes));
+      $output = theme('site_map_box', array(
+        'title' => $title,
+        'content' => $description . $output,
+        'attributes' => $attributes,
+        'options' => $options,
+      ));
     }
   }
 
   return $output;
 }
 
+
 /**
- * Render menus
+ * Render the latest maps for all the menus.
+ *
+ * @return string
+ *   Returns HTML string of site map for menus.
  */
 function _site_map_menus() {
   $output = '';
-  $class = array();
+  $options = array();
   $mids = array_filter(variable_get('site_map_show_menus', array()));
 
   if (!empty($mids)) {
     foreach ($mids as $mid) {
+      $class = array();
       $menu = menu_load($mid);
       // Use menu_tree_all_data to retrieve the expanded tree.
       $tree = menu_tree_all_data($mid);
       if (module_exists('i18n_menu')) {
         $tree = i18n_menu_localize_tree($tree, $GLOBALS['language']->language);
       }
+
+      // Add an alter hook so other modules can manipulate the menu tree prior to rendering
+      $alter_mid = preg_replace('/[^a-z0-9_]+/', '_', $mid);
+      drupal_alter(array('site_map_menu_tree', 'site_map_menu_tree_' . $alter_mid), $tree, $menu);
+
       $menu_display = _site_map_menu_tree_output($tree);
       $menu_html = drupal_render($menu_display);
       if (!empty($menu_html)) {
-        $title = $menu['title'];
+        $title = t($menu['title']);
+        if (module_exists('i18n_string')) {
+          $m_array = array('menu', 'menu', $menu['menu_name'], 'title');
+          $title = i18n_string_plain($m_array, $title);
+        }
+        _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
+
         $class[] = 'site-map-box-menu';
         $class[] = 'site-map-box-menu-' . $mid;
         $attributes = array('class' => $class);
-        $output .= theme('site_map_box', array('title' => $title, 'content' => $menu_html, 'attributes' => $attributes));
+        $output .= theme('site_map_box', array(
+          'title' => $title,
+          'content' => $menu_html,
+          'attributes' => $attributes,
+          'options' => $options,
+        ));
       }
     }
   }
@@ -369,52 +481,77 @@ function _site_map_menus() {
   return $output;
 }
 
+
+/**
+ * Render the latest maps for faq.
+ *
+ * @return string
+ *   Returns HTML string of site map for faq.
+ */
 function _site_map_faq() {
   $output = '';
+  $options = array();
   if (module_exists('faq')) {
     $title = variable_get('faq_title', t('Frequently Asked Questions'));
     $attributes = array('class' => array('site-map-box-faq'));
     $output = faq_get_faq_list();
-    $output = theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
+
+    $output = theme('site_map_box', array(
+      'title' => $title,
+      'content' => $output,
+      'attributes' => $attributes,
+      'options' => $options,
+    ));
   }
 
   return $output;
 }
 
+
 /**
- * This function can be called from blocks or pages as desired.
+ * Render the latest maps for the taxonomy tree.
+ *
+ * @return string
+ *   Returns HTML string of site map for taxonomies.
  */
 function _site_map_taxonomys() {
   $output = '';
-  $vids = array_filter(variable_get('site_map_show_vocabularies', array()));
+  $options = array();
+  $vnames = array_filter(variable_get('site_map_show_vocabularies', array()));
 
-  if (module_exists('taxonomy') && !empty($vids)) {
-    $result = db_query('SELECT vid, name, description FROM {taxonomy_vocabulary} WHERE vid IN (:vids) ORDER BY weight ASC, name', array(':vids' => $vids));
+  if (module_exists('taxonomy') && !empty($vnames)) {
+    $result = db_query('SELECT vid, name, description FROM {taxonomy_vocabulary} WHERE machine_name IN (:vnames) ORDER BY weight ASC, name', array(':vnames' => $vnames));
     foreach ($result as $voc) {
       if (module_exists('i18n_taxonomy')) {
         $voc->name = i18n_taxonomy_vocabulary_name($voc, $GLOBALS['language']->language);
       }
       $output .= _site_map_taxonomy_tree($voc->vid, $voc->name, $voc->description);
     }
+    _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
+
   }
 
   return $output;
 }
 
+
 /**
  * Render the taxonomy tree.
  *
- * @param $tree
+ * @param string $vid
  *   The results of taxonomy_get_tree() with optional 'count' fields.
- * @param $name
+ * @param string $name
  *   An optional name for the tree. (Default: NULL)
- * @param
+ * @param string $description
  *   $description An optional description of the tree. (Default: NULL)
- * @return
+ *
+ * @return string
  *   A string representing a rendered tree.
  */
 function _site_map_taxonomy_tree($vid, $name = NULL, $description = NULL) {
   $output = '';
+  $options = array();
   $class = array();
   if ($vid == variable_get('forum_nav_vocabulary', '')) {
     $title = l($name, 'forum');
@@ -430,10 +567,14 @@ function _site_map_taxonomy_tree($vid, $name = NULL, $description = NULL) {
 
   $last_depth = -1;
 
-  $output .= !empty($description) ? '<div class="description">' . filter_xss_admin($description) . "</div>\n" : '';
+  $output .= !empty($description) && variable_get('site_map_show_description', 1) ? '<div class="description">' . filter_xss_admin($description) . "</div>\n" : '';
 
-  // taxonomy_get_tree() honors access controls
-  $tree = taxonomy_get_tree($vid);
+  $site_map_categories_depth = variable_get('site_map_categories_depth') ? variable_get('site_map_categories_depth') : NULL;
+  if ($site_map_categories_depth == 'all') {
+    $site_map_categories_depth = NULL;
+  }
+  // taxonomy_get_tree() honors access controls.
+  $tree = taxonomy_get_tree($vid, 0, $site_map_categories_depth);
   foreach ($tree as $term) {
     $term->count = site_map_taxonomy_term_count_nodes($term->tid);
     if ($term->count <= $threshold) {
@@ -489,6 +630,9 @@ function _site_map_taxonomy_tree($vid, $name = NULL, $description = NULL) {
       }
     }
 
+    // Add an alter hook so other modules can manipulate the taxonomy term output
+    drupal_alter(array('site_map_taxonomy_term', 'site_map_taxonomy_term_' . $term->tid), $term_item, $term);
+
     $output .= $term_item;
 
     // Reset $last_depth in preparation for the next $term.
@@ -501,15 +645,22 @@ function _site_map_taxonomy_tree($vid, $name = NULL, $description = NULL) {
       $output .= "</li>\n</ul>\n";
     }
   }
+  _site_map_set_option($options, 'site_map_show_titles', 1, 1, 'show_titles', TRUE);
 
   $class[] = 'site-map-box-terms';
   $class[] = 'site-map-box-terms-' . $vid;
   $attributes = array('class' => $class);
 
-  $output = theme('site_map_box', array('title' => $title, 'content' => $output, 'attributes' => $attributes));
+  $output = theme('site_map_box', array(
+    'title' => $title,
+    'content' => $output,
+    'attributes' => $attributes,
+    'options' => $options,
+  ));
 
   return $output;
 }
+
 
 /**
  * Count the number of published nodes classified by a term.
@@ -521,9 +672,10 @@ function _site_map_taxonomy_tree($vid, $name = NULL, $description = NULL) {
  * field_attach_query(), but taxonomy.module has a special denormalized
  * table taxonomy_index which we can use for more speed. THX to taxonews.
  *
- * @param $tid
+ * @param string $tid
  *   The term's ID.
- * @return
+ *
+ * @return string
  *   An integer representing a number of nodes. Results are statically cached.
  */
 function site_map_taxonomy_term_count_nodes($tid) {
@@ -532,25 +684,25 @@ function site_map_taxonomy_term_count_nodes($tid) {
   $count = $query
     ->condition('ti.tid', $tid)
     ->execute()->fetchCol();
-
   return $count[0];
 }
 
+
 /**
+ * Returns a rendered menu tree.
+ *
  * This is a clone of the core menu_tree_output() function with the exception
  * of theme('site_map_menu_tree') for theming override reasons.
- *
- * Returns a rendered menu tree.
  *
  * The menu item's LI element is given one of the following classes:
  * - expanded: The menu item is showing its submenu.
  * - collapsed: The menu item has a submenu which is not shown.
  * - leaf: The menu item has no submenu.
  *
- * @param $tree
+ * @param array $tree
  *   A data structure representing the tree as returned from menu_tree_data.
  *
- * @return
+ * @return array
  *   A structured array to be rendered by drupal_render().
  */
 function _site_map_menu_tree_output($tree) {
@@ -559,8 +711,9 @@ function _site_map_menu_tree_output($tree) {
 
   // Pull out just the menu links we are going to render so that we
   // get an accurate count for the first/last classes.
+  // Thanks for fix by zhuber at https://drupal.org/node/1331104#comment-5200266
   foreach ($tree as $data) {
-    if ($data['link']['access'] && !$data['link']['hidden']) {
+    if ($data['link']['access'] && (!$data['link']['hidden'] || variable_get('site_map_show_menus_hidden', 0))) {
       $items[] = $data;
     }
   }
@@ -620,4 +773,27 @@ function _site_map_menu_tree_output($tree) {
   }
 
   return $build;
+}
+
+
+/**
+ * Sets options based on admin input paramaters for redering.
+ *
+ * @param array $options
+ *   The array of options to the site map theme.
+ * @param string $option_string
+ *   The string index given from the admin form to match.
+ * @param int $get_param
+ *   Parameter number
+ * @param int $equal_param
+ *   Result of param test, 0 or 1.
+ * @param string $set_string
+ *   Index of option to set, or the option name.
+ * @param bool $set_value
+ *   The option, on or off, or strings or ints for other options.
+ */
+function _site_map_set_option(&$options, $option_string, $get_param, $equal_param, $set_string, $set_value) {
+  if (variable_get($option_string, $get_param) == $equal_param) {
+    $options[$set_string] = $set_value;
+  }
 }

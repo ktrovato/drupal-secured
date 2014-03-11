@@ -359,11 +359,9 @@ function login_user_block_ip($variables) {
   // There is no need to check if the host has been banned, we can't get here
   // twice.
   $block = new stdClass();
-  $block->mask = $variables['@ip'];
-  $block->type = 'host';
-  $block->status = 0;
-  drupal_write_record('access', $block);
-  watchdog('login_security', 'Banned IP address @ip due to security configuration.', $variables, WATCHDOG_NOTICE, l(t('edit rule'), "admin/user/rules/edit/{$block->aid}", array('query' => array('destination' => 'admin/user/rules'))));
+  $block->ip = $variables['@ip'];
+  drupal_write_record('blocked_ips', $block);
+  watchdog('login_security', 'Banned IP address @ip due to security configuration.', $variables, WATCHDOG_NOTICE, l(t('view/delete blocked IPs'), "admin/config/people/ip-blocking"));
   // Using form_set_error because it may disrupt current form submission.
   form_set_error('void', login_security_t(variable_get('login_security_host_hard_banned', LOGIN_SECURITY_HOST_HARD_BANNED), $variables));
 }
