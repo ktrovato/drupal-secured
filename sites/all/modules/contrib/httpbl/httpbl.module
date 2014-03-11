@@ -1,0 +1,785 @@
+<?php
+
+/**
+ * @file
+ * Implementation of http:BL for Drupal. It provides IP-based
+ * blacklisting through http:BL and allows linking to a honeypot.
+ *
+ * @author Mark Janssen (praseodym)
+ * @link http://drupal.org/project/httpbl
+ * @link http://httpbl.org/
+ *
+ * Contact: praseodym (at) gmail (dot) com
+ *
+ * Feel free to improve this module, but please contact the author with any
+ * changes you make so they can be implemented into the 'official' version.
+ */
+
+/**
+ * Version 7.x
+ *
+ * Drupal 7 port + additional settings and Views support.
+ * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
+ *
+ * Additional code support by David Norman (deekayen)
+ */
+
+/**
+ * Cache levels.
+ */
+define('HTTPBL_CACHE_OFF',      0); // Cache is off
+define('HTTPBL_CACHE_DB',       1); // Only httpbl cache
+define('HTTPBL_CACHE_DBDRUPAL', 2); // Both httpbl cache and Drupal blocked_ips table
+
+/**
+ * Logging levels.
+ */
+define('HTTPBL_LOG_QUIET',      0); // Quiet - errors only
+define('HTTPBL_LOG_MIN',        1); // Minimal Logging - Positive lookups only
+define('HTTPBL_LOG_VERBOSE',    2); // Verbose Logging - Very verbose, recommended for testing only
+
+/**
+ * Blacklist levels.
+ */
+define('HTTPBL_LIST_SAFE',  0); // Not listed (or very low threat)
+define('HTTPBL_LIST_GREY',  2); // Greylisted: session whitelist request permitted
+define('HTTPBL_LIST_BLACK', 1); // Blacklisted: all requests blocked.
+
+/**
+ * Threshold levels.
+ */
+define('HTTPBL_THRESHOLD_GREY',   1); // Default Threshold under which a user is allowed, above which a user is greylisted
+define('HTTPBL_THRESHOLD_BLACK', 50); // Threshold under which a user is greylisted, and above which a user is blacklisted
+
+/**
+ * Check levels.
+ */
+define('HTTPBL_CHECK_NONE',     0); // No Checking
+define('HTTPBL_CHECK_COMMENTS', 1); // Check only comments
+define('HTTPBL_CHECK_ALL',      2); // Check all requests
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function httpbl_menu() {
+  $items['httpbl/whitelist'] = array(
+    'title' => 'Request whitelisting',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('httpbl_request_whitelist'),
+    'access callback' => 'httpbl_whitelist_access',
+    'access arguments' => array(),
+    'type' => MENU_CALLBACK,
+  );
+
+// Let's use a different menu for Drupal 7 and place it near core IP address blocking
+
+  $items['admin/config/people/httpbl'] = array(
+    'title' => 'Http:BL',
+    'description' => 'Manage http:BL and Honey Pot settings for limiting malicious traffic.',
+    'file' => 'httpbl.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('httpbl_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('admin httpbl'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_boot()
+ *
+ *   Blocks all access from nuisance IPs on every page request
+ */
+function httpbl_boot() {
+  // Only continue when checks on "all requests" is enabled
+  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) != HTTPBL_CHECK_ALL) {
+    return;
+  }
+
+  $result = httpbl_check(); // Check IP immediately upon access
+  if ($result) {
+    if ($result == HTTPBL_LIST_GREY) {
+      if ($_GET['q'] == 'httpbl/whitelist') {
+        return;
+      }
+ 
+      // If IP is found in Project Honeypot at Greylist threat level
+      // we notify user and offer a challenge to get white-listed (see if they are human).
+       
+      $message = variable_get('httpbl_message_grey', 'Sorry, %ip has been greylisted by <a href="%ipurl">http:BL</a>.<br>You may try whitelisting on <a href="%whitelisturl">%whitelisturl</a>.%honeypot');
+    }
+    
+     // If IP is found in Project Honeypot at Blacklist threat level
+     // we notify user that they are unwelcome.
+   
+    elseif ($result == HTTPBL_LIST_BLACK) {
+      $message = variable_get('httpbl_message_black', 'Sorry, %ip has been blacklisted by <a href="%ipurl">http:BL</a>.%honeypot');
+    }
+
+    // Place hidden link that spiders cannot resist
+    
+    if ($link = variable_get('httpbl_link', NULL)) {
+      $word = variable_get('httpbl_word', 'randomness');
+      $link = httpbl_honeylink($link, $word);
+    }
+
+    $message = strtr($message, array('%ip' => ip_address(), '%ipurl' => _httpbl_ipdata(ip_address(), FALSE), '%honeypot' => $link, '%whitelisturl' => _httpbl_url('/httpbl/whitelist')));
+
+    header('HTTP/1.1 403 Forbidden');
+    echo $message;
+    exit();
+  }
+}
+
+
+/**
+ * Implementation of hook_comment_presave()
+ *
+ *  Checks and Blocks comment submissions from nuisance IPs
+ */
+function httpbl_comment_presave($comment) {
+  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) != HTTPBL_CHECK_COMMENTS) {
+    return;
+  }
+  	if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  	  watchdog('httpbl', 'Checking user\'s IP during comment pre-save.', array(), WATCHDOG_DEBUG,NULL);
+  	}
+
+   if (httpbl_check()) {
+   	  // Comment user's IP found in Project Honeypot.
+   	  // Let them know  
+      drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'),'error');
+
+      // alter the comment subject and body
+      $comment->status  = 0; // Force comment to unpublished status
+      $comment->subject = t('(THIS COMMENT HAS BEEN HONEY-BLOCKED!)');
+      $comment->comment_body[LANGUAGE_NONE][0]['value'] .= t('<strong><<<<<< This comment was blocked and unpublished because <a href="http://www.projecthoneypot.org/">Project Honeypot</a> indicates it came from a suspicious IP address.</strong>');
+      
+      // Add to our statistics
+      if (variable_get('httpbl_stats', TRUE)) {
+        variable_set('httpbl_stat_comment', variable_get('httpbl_stat_comment', 0)+1);
+      }
+
+    }
+	return;
+}
+
+
+/**
+ * Check if an IP should be banned
+ *
+ * @return constant: HTTPBL_LIST_*
+ */
+function httpbl_check() {
+  static $result;
+  // Result was already calculated -- return.
+  if (is_int($result)) {
+    return $result;
+  }
+  
+  $ip = ip_address();
+// $ip = '127.1.40.1'; // simulate greylist response for testing
+// $ip = '127.1.80.1'; // simulate blacklist response for testing
+
+  // Check if user is whitelisted in any way
+  if (_httpbl_whitelisted($ip)) {
+    $result = HTTPBL_LIST_SAFE;
+    
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  	  watchdog('httpbl', 'This IP has been whitelisted.', array(), WATCHDOG_DEBUG,NULL);
+  	}
+
+  }
+  // Honeyblock Cache is enabled - do a cache lookup of IP
+  elseif ($cache = variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL)) {
+    $result = _httpbl_cache_get($ip);
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+	  watchdog('httpbl', 'Queried cache for host.  Host status is %results', array('%results' => $result ), WATCHDOG_DEBUG, NULL);    
+	}
+ }
+ 
+ // If user not white listed and not found in Honeyblock cache, we'll do a DNS Lookup
+  if (!(is_numeric($result))) { 
+
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  	  watchdog('httpbl', 'Honeypot DNS Lookup for IP %ip.', array('%ip' => $ip), WATCHDOG_DEBUG,NULL);
+  	}
+
+    // Do a Project Honeypot DNS lookup, and continue if lookup was succesful
+    if ($response = httpbl_dnslookup($ip)) {
+//     drupal_set_message(t('Check DNS IP - @ip.', array('@ip' => $ip)));
+      $stats = variable_get('httpbl_stats', TRUE);
+      
+      // Blacklist?
+      if ($response['threat'] > (variable_get('httpbl_black_threshold', HTTPBL_THRESHOLD_BLACK)) && $response['type']) {
+        drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'error');
+
+        if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
+		  watchdog('httpbl', '%ip will be blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
+        }
+        if ($stats) {
+          variable_set('httpbl_stat_black', variable_get('httpbl_stat_black', 0)+1);
+        }
+        $result = HTTPBL_LIST_BLACK;
+      }
+      // Greylist?
+      else if ($response['threat'] > (variable_get('httpbl_grey_threshold', HTTPBL_THRESHOLD_GREY)) && $response['type']) {
+       drupal_set_message(t('GREY-LISTED! - Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'warning');
+
+          if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
+            watchdog('httpbl', '%ip will be greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
+          }
+        if ($stats) {
+          variable_set('httpbl_stat_grey', variable_get('httpbl_stat_grey', 0) + 1);
+        }
+        $result = HTTPBL_LIST_GREY;
+      }
+      // Listed, but is safe
+      else {
+      
+        if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  	  	watchdog('httpbl', 'Honeypot profile found, but no threat. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
+  	  	}
+
+        $result = HTTPBL_LIST_SAFE;
+      }
+
+      // Cache the results - Use Blacklist offset settings (default 1 year)
+      //             or Greylist offset settings (default 1 day)
+      if ($cache) {
+      	if ($result == HTTPBL_LIST_BLACK) {
+      	  _httpbl_cache_set($ip, $result, variable_get('httpbl_blacklist_offset', 31536000));
+      	}
+      	elseif ($result == HTTPBL_LIST_GREY){
+          _httpbl_cache_set($ip, $result, variable_get('httpbl_greylist_offset', 86400));
+      	}
+      }
+  	}
+    // No result, safe - with offset settings (default 3 hours)
+    else {
+      if ($cache) {
+        _httpbl_cache_set($ip, HTTPBL_LIST_SAFE, variable_get('httpbl_safe_offset', 10800));
+      }
+      
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  	  	watchdog('httpbl', 'No Honeypot profile. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
+  	}
+
+      
+      $result = HTTPBL_LIST_SAFE;
+    }
+  }
+
+// User was found in httpbl cache, report their status if problematic
+
+	elseif (!($result == HTTPBL_LIST_SAFE)){
+//     drupal_set_message(t('Final result is @result.',array('@result' => $result)));
+     drupal_set_message(t('Your IP address is restricted on this site.'), 'error');
+    }
+
+  return $result;
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Adds a Project Honeypot link to the footer.
+ */
+function httpbl_page_build(&$page) {
+  if (variable_get('httpbl_footer', FALSE)) {
+    $link = variable_get('httpbl_link', NULL);
+    $word = variable_get('httpbl_word', 'randomness');
+    $page['page_bottom']['httpbl'] = array(
+      '#type' => 'markup',
+      '#markup' => httpbl_honeylink($link, $word),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_requirements().
+ *
+ * Shows some basic usage statistics for the module.
+ */
+function httpbl_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    if (!variable_get('httpbl_accesskey', NULL) || !variable_get('httpbl_check', HTTPBL_CHECK_NONE)) {
+      $requirements['httpbl'] = array(
+        'description' => t('IP blacklist lookups are currently disabled; enter your access key <a href="@settings">on the settings page</a> and enable checks to enable blacklist lookups.', array('@settings' => url('admin/config/people/httpbl'))),
+        'severity' => REQUIREMENT_ERROR,
+        'value' => t('Disabled'),
+      );
+      if (variable_get('httpbl_footer', FALSE)) {
+        $requirements['httpbl']['severity'] = REQUIREMENT_WARNING;
+      }
+    }
+    else {
+      $stat_black = variable_get('httpbl_stat_black', 0);
+      $stat_comment = variable_get('httpbl_stat_comment', 0);
+      $stat_grey = variable_get('httpbl_stat_grey', 0);
+
+      if (!variable_get('httpbl_stats', TRUE)) {
+        $requirements['httpbl'] = array(
+          'description' => t('Http:BL is enabled.'),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+      elseif (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_COMMENTS) {
+        $requirements['httpbl'] = array(
+          'description' => t('Http:BL is enabled and has blocked @c comments.', array('@c' => $stat_comment)),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+      elseif (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_ALL) {
+        $requirements['httpbl'] = array(
+          'description' => t('Http:BL is enabled and has blocked @t visits (@b blacklisted and @g greylisted).', array('@t' => $stat_grey+$stat_black, '@b' => $stat_black, '@g' => $stat_grey)),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+      if (!variable_get('httpbl_footer', FALSE)) {
+        $requirements['httpbl']['severity'] = REQUIREMENT_WARNING;
+        $requirements['httpbl']['description'] .= ' ' . t('However, the honeypot link is not enabled.');
+      }
+    }
+
+    $requirements['httpbl']['title'] = t('Http:BL');
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Cleans old results from the cache table and also Drupal's blocked_ips table if appropriate.
+ */
+function httpbl_cron() {
+  // Only continue when caching is enabled
+  if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF)) {
+    if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DBDRUPAL) {
+      // Also check status so that we do not accidentally delete the site's custom access rules.
+      db_delete('blocked_ips')
+        ->where('ip IN (SELECT hostname FROM {httpbl} WHERE status > 0 AND expire <= :time)', array(':time' => REQUEST_TIME))
+        ->execute();
+    }
+    db_delete('httpbl')
+      ->condition('expire', REQUEST_TIME, '<=')
+      ->execute();
+  }
+}
+
+/**
+ * Return HTML code with hidden Honeypot link
+ * in one of the many styles.
+ *
+ * @param string $link
+ * @param string $word
+ * @return string
+ */
+function httpbl_honeylink($link, $word) {
+  if (!$link) {
+    return;
+  }
+  switch (mt_rand(0, 6)) {
+    case 0:
+      return '<div><a rel="nofollow" href="'. $link .'"><!-- '. $word .' --></a></div>';
+    case 1:
+      return '<div><a rel="nofollow" href="'. $link .'" style="display: none;">'. $word .'</a></div>';
+    case 2:
+      return '<div style="display: none;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
+    case 3:
+      return '<div><a rel="nofollow" href="'. $link .'"></a></div>';
+    case 4:
+      return '<!-- <a href="' . $link . '">' . $word . '</a> -->';
+    case 5:
+      return '<div style="position: absolute; top: -250px; left: -250px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
+    case 6:
+      return '<div><a rel="nofollow" href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
+// In some browsers case 7 renders a visible link that could be clicked by users
+//    case 7:
+//      return '<div style="height: 0px; width: 0px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
+  }
+}
+
+/**
+ * Reverse IP octets
+ *
+ * @param string $ip
+ * @return string
+ */
+function _httpbl_reverse_ip($ip) {
+  if (!is_numeric(str_replace('.', '', $ip))) {
+    return NULL;
+  }
+
+  $ip = explode('.', $ip);
+
+  if (count($ip) != 4) {
+    return NULL;
+  }
+
+  return $ip[3] . '.' . $ip[2] . '.' . $ip[1] . '.' . $ip[0];
+}
+
+/**
+ * Determine whether a user has access to the session whitelist functionality.
+ */
+function httpbl_whitelist_access() {
+  return (httpbl_check() == HTTPBL_LIST_GREY);
+}
+
+/**
+ * Form to request a session whitelist.
+ */
+function httpbl_request_whitelist($form, &$form_state) {
+  $form['#redirect'] = 'node';
+
+  $form['reason'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Reason you were blocked. (It\'s okay to say you don\'t know if you don\'t)'),
+    '#size' => 60,
+    '#required' => TRUE,
+  );
+
+  $form['block'] = array(
+    '#type' => 'textfield',
+    '#title' => t('LEAVE THIS BLANK! (This is where spiders fail, because they don\'t actually read!)'),
+    '#size' => 15,
+  );
+
+  $form['leave'] = array(
+    '#type' => 'textfield',
+    '#size' => 30,
+    '#attributes' => array('style' => 'display: none')
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Whitelist request'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate session whitelist request.
+ * Ban the user if the 'forbidden' field was filled in.
+ */
+function httpbl_request_whitelist_validate($form, &$form_state) {
+  $ip = ip_address();
+  $iplink = _httpbl_ipdata($ip);
+
+  if ($form_state['values']['block'] || $form_state['values']['leave']) {
+    if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF)) {
+      _httpbl_cache_update($ip, HTTPBL_LIST_BLACK, variable_get('httpbl_blacklist_offset', 31536000));
+      $return_date = format_interval(variable_get('httpbl_blacklist_offset', 31536000), $granularity = 2, $langcode = NULL);
+      
+      if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
+      watchdog('httpbl', '%ip failed session whitelist request, blacklisted for %return_date.', array('%ip' => $ip,  '%return_date' => $return_date), WATCHDOG_ALERT, $iplink);
+      }
+      print t('Whitelist request failed; your IP has been blacklisted for ' . $return_date .'.');
+      exit();
+    }
+    else {
+    
+      if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
+      watchdog('httpbl', '%ip failed session whitelist request.', array('%ip' => $ip), WATCHDOG_ALERT, $iplink);
+      }
+      print t('Whitelist request failed.');
+      exit();
+    }
+  }
+
+  if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
+    watchdog('httpbl', '%ip tried a whitelist request', array('%ip' => $ip), WATCHDOG_NOTICE, $iplink);
+  }
+}
+
+/**
+ * Grant the session whitelist.
+ */
+function httpbl_request_whitelist_submit($form, &$form_state) {
+  $ip = ip_address();
+  $iplink = _httpbl_ipdata($ip);
+  
+  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+    watchdog('httpbl', 'Session from %ip whitelisted. Reason for block: @reason', array('%ip' => $ip, '@reason' => check_plain($form_state['values']['reason'])), WATCHDOG_WARNING, $iplink);
+  }
+  drupal_set_message(t('The current session has been whitelisted.'));
+  $_SESSION['httpbl_status'] = 'white';
+  drupal_goto('/');
+}
+
+/**
+ * Do http:BL DNS lookup
+ *
+ * @param string $ip
+ * @param string $key
+ * @return array
+ */
+function httpbl_dnslookup($ip, $key = NULL) {
+  // Thanks to J.Wesley2 at
+  // http://www.projecthoneypot.org/board/read.php?f=10&i=1&t=1
+
+  if (!$ip = _httpbl_reverse_ip($ip)) {
+    return FALSE;
+  }
+
+  if (!$key && !$key = variable_get('httpbl_accesskey', NULL)) {
+    return FALSE;
+  }
+
+  $query = $key . '.' . $ip . '.dnsbl.httpbl.org.';
+  $response = gethostbyname($query);
+
+  if ($response == $query) {
+    // if the domain does not resolve then it will be the same thing we passed to gethostbyname
+    return FALSE;
+  }
+
+  $values = array();
+  $values['raw'] = $response;
+  $response = explode('.', $response);
+
+  if ($response[0] != '127') {
+    // if the first octet is not 127, the response should be considered invalid
+    watchdog('httpbl', 'Lookup failed for %ip, response was %response', array('%ip' => $ip, '%response' => $values['raw']), WATCHDOG_ERROR);
+    return FALSE;
+  }
+
+  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+    watchdog('httpbl', 'Honeypot lookup results for %ip, response was %response', array('%ip' => $ip, '%response' => $values['raw']), WATCHDOG_DEBUG);
+  }
+
+  $values['last_activity'] = $response[1];
+  $values['threat'] = $response[2];
+  $values['type'] = $response[3];
+  if ($response[3] == 0) {
+    //if it's 0 then it's only a Search Engine
+    $values['search_engine'] = TRUE;
+  }
+
+  if ($response[3] & 1) {
+    //does it have the same bits as 1 set
+    $values['suspicious'] = TRUE;
+  }
+
+  if ($response[3] & 2) {
+    //does it have the same bits as 2 set
+    $values['harvester'] = TRUE;
+  }
+
+  if ($response[3] & 4) {
+    //does it have the same bits as 4 set
+    $values['comment_spammer'] = TRUE;
+  }
+
+  return $values;
+}
+
+/**
+ * Check if an IP is whitelisted through a session whitelist.
+ */
+function _httpbl_whitelisted($ip) {
+  return (isset($_SESSION['httpbl_status']) && $_SESSION['httpbl_status'] == 'white');
+}
+
+/**
+ * Write status value into httpbl cache table
+ *** (add Grey and/or Blacklisted IPs to httpbl table)
+ */
+function _httpbl_cache_set($ip, $status, $offset = 0) {
+  // DELETE and then INSERT leads to race conditions [#723358].
+  // evidence says transactions are required -- deekayen
+  $txn = db_transaction();
+
+  db_merge('httpbl')
+    ->key(array('hostname' => $ip))
+    ->fields(array('status' => $status, 'expire' => REQUEST_TIME + $offset))
+    ->execute();
+
+  	// Also, conditionally, ban blacklisted IPs in Drupal blocked_ips table
+
+  if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL) == HTTPBL_CACHE_DBDRUPAL) {
+  
+    if (_httpbl_banned_check($ip)) {
+    
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+      watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
+      }
+      
+      drupal_set_message(t('IP address %ip currently banned from this site.', array('%ip' => $ip)), 'error');
+      // Note: Logically, it is theoretically impossible for the user to ever see this message because
+      // they would have been banned from getting this far, but it's here for debugging purposes.  Should
+      // anyone report seeing this it would mean that banning is not occurring as it should.
+    }
+    else {
+      db_insert('blocked_ips')
+      ->fields(array('ip' => $ip))
+      ->execute();
+      
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+        watchdog('httpbl', 'Added IP (%ip) to site banned IPs', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
+      }
+      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error');
+      // Note: Logically, it is theoretically impossible for the user to ever see this message because
+      // they will have been banned before the see this page, but it's here for debugging purposes.  Should
+      // anyone report seeing this it would mean that banning is not occurring as it should.
+
+    }
+  }
+}
+
+/**
+ * Update cache table - Called when visitor fails the Whitelist test.
+ */
+  // If user fails Whitelist test, we blacklist them (status = 1) in the httpbl cache and also ban them in blocked_ips
+ 
+function _httpbl_cache_update($ip, $status, $offset = 0) {
+  $txn = db_transaction();
+
+  db_update('httpbl')
+    ->fields(array(
+      'status' => $status,
+      'expire' => REQUEST_TIME + $offset,
+    ))
+    ->condition('hostname', $ip, '=')
+    ->execute();
+
+  if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL) == HTTPBL_CACHE_DBDRUPAL) {
+    if (_httpbl_banned_check($ip)) {
+    
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+        watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
+      }
+      drupal_set_message(t('IP address ( %ip ) currently banned from this site.', array('%ip' => $ip)), 'error');
+    }
+    else {
+      db_insert('blocked_ips')
+      ->fields(array('ip' => $ip))
+      ->execute();
+      
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+        watchdog('httpbl', 'Banned IP (%ip).', array('%ip' => $ip), WATCHDOG_ALERT, NULL);
+      }
+      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error');
+    }
+
+  }
+}
+
+/**
+ * Get IP host's status value from cache table
+ */
+function _httpbl_cache_get($ip) {
+  return db_select('httpbl','h')
+    ->fields('h', array('status'))
+    ->condition('hostname', $ip)
+    ->range(0, 1)
+    ->execute()
+    ->fetchField();
+}
+
+/**
+ * Check if IP host is banned in blocked_ips table
+ */
+function _httpbl_banned_check($ip) {
+  return db_select('blocked_ips','banned')
+    ->fields('banned', array('ip'))
+    ->condition('ip', $ip)
+    ->range(0, 1)
+    ->execute()
+    ->fetchField();
+}
+
+/**
+ * Generate a link with Project Honeypot information for a given IP address.
+ */
+function _httpbl_ipdata($ip, $anchor = TRUE) {
+  if ($anchor) {
+    return '<a href="http://www.projecthoneypot.org/search_ip.php?ip=' . $ip . '">IP data</a>';
+  }
+  else {
+    return 'http://www.projecthoneypot.org/search_ip.php?ip=' . $ip;
+  }
+}
+
+/**
+ * Lightweight url function, since url() isn't available yet.
+ */
+function _httpbl_url($path = NULL) {
+  global $base_url;
+  $script = (strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') === FALSE) ? 'index.php' : '';
+
+  if (variable_get('clean_url', '0')) {
+    return $base_url . $path;
+  }
+  else {
+    return $base_url . $script . '?q=' . $path;
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function httpbl_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#httpbl':
+      $output = '';
+      $output .= '<h3>' . t('About Http:BL') . '</h3>';
+      $output .= '<p>' . t('The Http:BL module helps you block nuisance traffic from your site by implementing "http:BL," a blocking service by Project Honey Pot. You can also return the favor and make Project Honeypot better, by capturing and reporting nascent evil doers that are not yet in Project Honey Pot\'s database. For more in-depth information, visit the <a href="@httpbl">http:BL homepage</a> at Project Honey Pot.', array('@httpbl' => url('http://www.projecthoneypot.org/httpbl.php'))) . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t('<strong>Block malicious traffic before it gets into your site</strong>') . '</dt>';
+      $output .= '<dd>' . t('Project Honey Pot tracks harvesters, comment spammers, and other suspicious visitors to websites. Http:BL allows website administrators to take advantage of the data generated by Project Honey Pot in order to keep suspicious and malicious web robots off their sites, by providing data back about the IP addresses of visitors to your website. Http:BL will grey-list or blacklist traffic, based on Project Honey Pot\'s assessment of risk.  Blacklisted traffic will automatically be added to your blocked IPs (be banned from future visits). Because sometimes innocent, real people get stuck with tarnished IPs, Http:BL gives people with grey-listed IPs the opportunity to whitelist themselves by responding to a simple challenge that spiders and web-bots will usually fail. ') . '</dd>';
+
+      $output .= '<dt>' . t('<strong>Identify blocked traffic</strong>') . '</dt>';
+      $output .= '<dd>' . t('Http:BL includes log messaging and Views reporting capability that will help you identify grey and blacklisted traffic, and review those IPs against Project Honeypot\'s database to see why they were banned.  In other words, if you\'re ever asked, "Why was this person blocked?" (a sensitive issue in some environments), you have resources available to help you answer the question, armed with factual details. If your site receives extremely heavy traffic, you can improve performance by keeping logging options set to a minimum level. You\'ll still have Views reporting access for revealing the blocked traffic. ') . '</dd>';
+
+      $output .= '<dt>' . t('<strong>Block Comments only</strong>') . '</dt>';
+      $output .= '<dd>' . t('Http:BL can be set for only checking and blocking comments only from malicious IPs.  Instead of refusing those IPs access to your site, just deny them access to commenting.  Any comments added by malicious IPs will be over-written with a message indicating the comment was blocked, for easy identification by admin and comment approvers. ') . '</dd>';
+
+      $output .= '<dt>' . t('<strong>Set up a Honey Pot (spammer trap)</strong>') . '</dt>';
+      $output .= '<dd>' . t('You can set up honeypot traps (hidden links) that will report any IPs clicking them to Project Honeypot.  You give back to the project by helping to identify new and/or previously unidentified nuisance IPs that are not yet in the Project Honeypot database. Depending on your account settings (at Project Honeypot), you may receive notices letting you know that your site caught a new trouble-maker.  Stick a feather in your cap because you helped eliminate garbage not only from your site, but other\'s as well!') . '</dd>';
+      return $output;
+
+    case 'admin/config/people/httpbl':
+      return '<p>' . t('Http:BL Settings... See <a href="@blockedHosts">Honeypot Blocks</a> for a list of grey and blacklisted host IPs.', array('@blockedHosts' => url('admin/reports/blocked_hosts'))) . '</p>';
+  }
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function httpbl_permission() {
+  return array(
+    'admin httpbl' => array(
+      'title' => t('Administer Http:BL'),
+      'description' => t(''),
+      'restrict access' => t(TRUE),
+    ),
+    'report httpbl' => array(
+      'title' => t('Access Http:BL views'),
+      'description' => t('View reports on blocked (grey or black-listed) and permitted (white-listed traffic).'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function httpbl_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'httpbl') .'/views',
+  );
+}
