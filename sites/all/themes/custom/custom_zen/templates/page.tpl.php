@@ -9,44 +9,6 @@
 ?>
 
 <div id="page">
-  <div id="accessibility-block">
-<!--    <label><span style="float: left; text-align: left; font-size: 12px; padding-top: 5px;">Accessibility&nbsp;</span></label> -->
-
-
-	<div class="ps-custom">
-		<a href="javascript:void(0);" title="White Font" style="font-size: 14px; text-decoration: none; font-family: Arial; color: #ffffff; display: block; padding: 3px 5px; background-color: #000000; float: left;" role="button" tabindex="0" 
-		onclick="document.getElementById('main-container').className ='whitefont';
-				 document.getElementById('navbar').className ='whitefont';">
-		A</a>
-				<a href="javascript:void(0);" title="Yellow Font"  style="font-size: 14px; text-decoration: none; font-family: Arial; color: #ffcc66; display: block; padding: 3px 5px; background-color: #003366; float: left;" role="button" tabindex="0" 
-		onclick="document.getElementById('main-container').className ='bluefont';">
-		A</a>
-		<a href="javascript:void(0);" title="Reset Font Color"  style="font-size: 14px; text-decoration: none; font-family: Arial; color: #000000; display: block; padding: 3px 5px; background-color: #ffffff; float: left;" role="button" tabindex="0" 
-		onclick="document.getElementById('main-container').className ='resetfont';">
-		A</a>
-	</div>
-
-        <div class="ts-custom">
-		<a href="javascript:void(0);" title="Increase Font Size" style="font-size: 18px; text-decoration: none; font-family: Arial; padding: 3px 5px; height: 27px;"
-		onclick="document.getElementById('main-container').className ='bigfont';">
-		A</a>
-				<a href="javascript:void(0);" title="Reset Font Size"  style="font-size: 14px; text-decoration: none; font-family: Arial; padding: 3px 5px; height: 27px;"
-		onclick="document.getElementById('main-container').className ='normalfont';">
-		A</a>
-<!--
-				<a href="#" title="title"  style="font-size: 14px; text-decoration: none; font-family: Arial Black"
-		onClick="document.getElementById('main-container').className ='smallfont';">
-		A</a>
--->
-		</div>
-	   <div class="search-custom">
-		<?php
-          $block = module_invoke('search', 'block_view', 'form');
-          print render($block);
-		?>
-
-	</div>
-</div>
   <header class="header" id="header" role="banner">
 
     <?php if ($logo): ?>
