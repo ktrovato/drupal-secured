@@ -16,12 +16,12 @@ function secured_install() {
   db_update('system')
     ->fields(array('status' => 1))
     ->condition('type', 'theme')
-    ->condition('name', 'ghp_bootstrap')
+    ->condition('name', 'custom_zen')
     ->execute();
-  variable_set('theme_default', 'custom_bootstrap');
+  variable_set('theme_default', 'custom_zen');
 
   // Enable some standard blocks.
-  $default_theme = variable_get('theme_default', 'ghp_bootstrap');
+  $default_theme = variable_get('theme_default', 'custom_zen');
   $admin_theme = 'seven';
   $blocks = array(
     array(
