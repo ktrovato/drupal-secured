@@ -555,10 +555,7 @@ function revisioning_node_presave($node) {
     $node->current_title   = $node->title;
     $node->current_promote = $node->promote;
     $node->current_sticky  = $node->sticky;
-    if (isset($node->comment)) {
-      // Comment module enabled.
-      $node->current_comment = $node->comment;
-    }
+    $node->current_comment = isset($node->comment) ? $node->comment : 0;
     return;
   }
 
@@ -588,10 +585,7 @@ function revisioning_node_presave($node) {
     $node->current_title   = $current_revision->title;
     $node->current_promote = $current_revision->promote;
     $node->current_sticky  = $current_revision->sticky;
-    if (isset($current_revision->comment)) {
-      // Comment module enabled.
-      $node->current_comment = $current_revision->comment;
-    }
+    $node->current_comment = isset($current_revision->comment) ? $current_revision->comment : 0;
   }
 }
 
@@ -653,19 +647,19 @@ function revisioning_node_update($node) {
   $old_node = isset($node->original) ? $node->original : NULL;
   if (isset($old_node) && !empty($file_fields)) {
     foreach ($file_fields as $file_field) {
-      $old_files = field_get_items('node', $old_node, $file_field['field_name'], $old_node->language);
-      if (!empty($old_files)) {
+      if ($old_files = field_get_items('node', $old_node, $file_field['field_name'], $old_node->language)) {
         foreach ($old_files as $old_single_file) {
-          $old_file = (object) $old_single_file;
-          file_usage_add($old_file, 'revisioning', 'revision', $old_node->vid);
+          if (!empty($old_single_file)) {
+            $old_file = (object) $old_single_file;
+            file_usage_add($old_file, 'revisioning', 'revision', $old_node->vid);
+          }
         }
       }
     }
   }
   if (!empty($file_fields)) {
     foreach ($file_fields as $file_field) {
-      $files = field_get_items('node', $node, $file_field['field_name'], $node->language);
-      if (!empty($files)) {
+      if ($files = field_get_items('node', $node, $file_field['field_name'], $node->language)) {
         foreach ($files as $single_file) {
           $file = (object) $single_file;
           file_usage_add($file, 'revisioning', 'revision', $node->vid);
@@ -698,12 +692,46 @@ function revisioning_node_insert($node) {
   }
   if (!empty($file_fields)) {
     foreach ($file_fields as $file_field) {
-      $files = field_get_items('node', $node, $file_field['field_name'], $node->language);
-      foreach ($files as $single_file) {
-        $file = (object) $single_file;
-        file_usage_add($file, 'revisioning', 'revision', $node->vid);
+      if ($files = field_get_items('node', $node, $file_field['field_name'], $node->language)) {
+        foreach ($files as $single_file) {
+          $file = (object) $single_file;
+          file_usage_add($file, 'revisioning', 'revision', $node->vid);
+        }
       }
     }
+  }
+}
+
+/**
+ * Implements hook_node_access_records().
+ *
+ * Replaces all node properties and fields to those of the current node,
+ * so node access modules implementing this hook do not use values
+ * from revisions that are still in moderation.
+ */
+function revisioning_node_access_records($node) {
+  if (!revisioning_revision_is_current($node)) {
+    $current_node = node_load($node->nid, NULL, TRUE);
+    foreach (get_object_vars($node) as $k => $value) {
+      unset($node->$k);
+      if (isset($current_node->$k)) {
+        $node->$k = $current_node->$k;
+      }
+    }
+  }
+  return array();
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * Ensures that revisioning_node_access_records() runs before other modules.
+ */
+function revisioning_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'node_access_records') {
+    $group = array('revisioning' => $implementations['revisioning']);
+    unset($implementations['revisioning']);
+    $implementations = $group + $implementations;
   }
 }
 
@@ -1174,7 +1202,7 @@ if (module_exists('diff')) {
     // For diff_diffs_show().
     module_load_include('inc', 'diff', 'diff.pages');
     // Make sure that latest of the two revisions is on the right.
-    if ($node->current_revision_id > $node->vid) {
+    if ($node->current_revision_id < $node->vid) {
       return diff_diffs_show($node, $node->current_revision_id, $node->vid);
     }
     return diff_diffs_show($node, $node->vid, $node->current_revision_id);

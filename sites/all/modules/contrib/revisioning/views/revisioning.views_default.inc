@@ -363,6 +363,6 @@ function revisioning_views_default_views() {
     t('Page'),
   );
   $views[$view->name] = $view;
-  
+
   return $views;
 }

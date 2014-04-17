@@ -1123,6 +1123,55 @@ function wysiwyg_get_directories($plugintype) {
 }
 
 /**
+ * Create a placeholder structure for JavaScript callbacks.
+ *
+ * @param $name
+ *  A string with the name of the callback, use 'object.subobject.method'
+ *  syntax for methods in nested objects.
+ * @param $context
+ *  An optional string with the name of an object for overriding 'this' inside
+ *  the function. Use 'object.subobject' syntax for nested objects. Defaults to
+ *  the window object.
+ *
+ * @return
+ *  An array with placeholder information for creating a JavaScript function
+ *  reference on the client.
+ */
+function wysiwyg_wrap_js_callback($name, $context = null) {
+  $obj = array(
+    'drupalWysiwygType' => 'callback',
+    'name' => $name,
+  );
+  if ($context) {
+    $obj['context'] = $context;
+  }
+  return $obj;
+}
+
+/**
+ * Create a placeholder structure for JavaScript RegExp objects.
+ *
+ * @param $regexp
+ *  A JavaScript Regular Expression as a string, without / wrappers.
+ * @param $modifiers
+ *  An optional string with modifiers for the RegExp object.
+ *
+ * @return
+ *  An array with placeholder information for creating a JavaScript RegExp
+ *  object on the client.
+ */
+function wysiwyg_wrap_js_regexp($regexp, $modifiers = null) {
+  $obj = array(
+    'drupalWysiwygType' => 'regexp',
+    'regexp' => $regexp,
+  );
+  if ($modifiers) {
+    $obj['modifiers'] = $modifiers;
+  }
+  return $obj;
+}
+
+/**
  * Process a single hook implementation of a wysiwyg editor.
  *
  * @param $module

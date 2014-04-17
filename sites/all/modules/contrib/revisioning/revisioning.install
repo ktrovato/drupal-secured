@@ -12,10 +12,11 @@ function revisioning_install() {
   /*
    * taxonomy_node_insert() and taxonomy_node_update() hooks must be executed
    * before revisioning_node_insert() and revisioning_node_update(). So increase
-   * our weight.
+   * our weight to 1 or higher.
+   * A weight of 6 was chosen based on [#2142429].
    */
   db_update('system')
-    ->fields(array('weight' => 1))
+    ->fields(array('weight' => 6))
     ->condition('name', 'revisioning')
     ->execute();
 
@@ -74,6 +75,17 @@ function revisioning_uninstall() {
 function revisioning_update_7104() {
   db_update('system')
     ->fields(array('weight' => 1))
+    ->condition('name', 'revisioning')
+    ->execute();
+}
+
+/**
+ * To avoid problems when Revisioning is installed with Diff and Workbench too.
+ * See [#2142429].
+ */
+function revisioning_update_7107() {
+  db_update('system')
+    ->fields(array('weight' => '6'))
     ->condition('name', 'revisioning')
     ->execute();
 }

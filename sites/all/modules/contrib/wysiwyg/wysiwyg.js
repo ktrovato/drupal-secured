@@ -136,7 +136,7 @@ Drupal.wysiwygAttach = function(context, params) {
     }
     // Attach editor, if enabled by default or last state was enabled.
     if (params.status) {
-      Drupal.wysiwyg.editor.attach[params.editor](context, params, (Drupal.settings.wysiwyg.configs[params.editor] ? jQuery.extend(true, {}, Drupal.settings.wysiwyg.configs[params.editor][params.format]) : {}));
+      Drupal.wysiwyg.editor.attach[params.editor](context, params, processObjectTypes(Drupal.settings.wysiwyg.configs[params.editor] ? jQuery.extend(true, {}, Drupal.settings.wysiwyg.configs[params.editor][params.format]) : {}));
     }
     // Otherwise, attach default behaviors.
     else {
@@ -255,6 +255,105 @@ Drupal.wysiwyg.getParams = function(element, params) {
   params.resizable = parseInt(params.resizable, 10);
   return params;
 };
+
+/**
+ * Convert JSON type placeholders into the actual types.
+ *
+ * Recognizes function references (callbacks) and Regular Expressions.
+ *
+ * To create a callback, pass in an object with the following properties:
+ * - 'drupalWysiwygType': Must be set to 'callback'.
+ * - 'name': A string with the name of the callback, use
+ *   'object.subobject.method' syntax for methods in nested objects.
+ * - 'context': An optional string with the name of an object for overriding
+ *   'this' inside the function. Use 'object.subobject' syntax for nested
+ *   objects. Defaults to the window object.
+ *
+ * To create a RegExp, pass in an object with the following properties:
+ * - 'drupalWysiwygType: Must be set to 'regexp'.
+ * - 'regexp': The Regular Expression as a string, without / wrappers.
+ * - 'modifiers': An optional string with modifiers to set on the RegExp object.
+ *
+ * @param json
+ *  The json argument with all recognized type placeholders replaced by the real
+ *  types.
+ *
+ * @return The JSON object with placeholder types replaced.
+ */
+function processObjectTypes(json) {
+  var out = null;
+  if (typeof json != 'object') {
+    return json;
+  }
+  out = new json.constructor();
+  if (json.drupalWysiwygType) {
+    switch (json.drupalWysiwygType) {
+      case 'callback':
+        out = callbackWrapper(json.name, json.context);
+        break;
+      case 'regexp':
+        out = new RegExp(json.regexp, json.modifiers ? json.modifiers : undefined);
+        break;
+      default:
+        out.drupalWysiwygType = json.drupalWysiwygType;
+    }
+  }
+  else {
+    for (var i in json) {
+      if (json.hasOwnProperty(i) && json[i] && typeof json[i] == 'object') {
+        out[i] = processObjectTypes(json[i]);
+      }
+      else {
+        out[i] = json[i];
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Convert function names into function references.
+ *
+ * @param name
+ *  The name of a function to use as callback. Use the 'object.subobject.method'
+ *  syntax for methods in nested objects.
+ * @param context
+ *  An optional string with the name of an object for overriding 'this' inside
+ *  the function. Use 'object.subobject' syntax for nested objects. Defaults to
+ *  the window object.
+ *
+ * @return
+ *  A function which will call the named function or method in the proper
+ *  context, passing through arguments and return values.
+ */
+function callbackWrapper(name, context) {
+  var namespaces = name.split('.'), func = namespaces.pop(), obj = window;
+  for (var i = 0; obj && i < namespaces.length; i++) {
+    obj = obj[namespaces[i]];
+  }
+  if (!obj) {
+    throw "Wysiwyg: Unable to locate callback " + namespaces.join('.') + "." + func + "()";
+  }
+  if (!context) {
+    context = obj;
+  }
+  else if (typeof context == 'string'){
+    namespaces = context.split('.');
+    context = window;
+    for (i = 0; context && i < namespaces.length; i++) {
+      context = context[namespaces[i]];
+    }
+    if (!context) {
+      throw "Wysiwyg: Unable to locate context object " + namespaces.join('.');
+    }
+  }
+  if (typeof obj[func] != 'function') {
+    throw "Wysiwyg: " + func + " is not a callback function";
+  }
+  return function () {
+    return obj[func].apply(context, arguments);
+  }
+}
 
 /**
  * Allow certain editor libraries to initialize before the DOM is loaded.

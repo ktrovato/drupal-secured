@@ -45,9 +45,13 @@ class revisioning_handler_filter_revision_state extends views_handler_filter_in_
 
         case REVISION_PENDING:
           $subclauses[] = "($revisions_table.vid>$node_table.vid OR ($node_table.status=0 AND (SELECT COUNT(vid) FROM {" . $revisions_table . "} WHERE nid=$node_table.nid)=1))";
-          // Make sure UNIQUE is set!
-          $this->query->table_queue[$revisions_table]['join'] = new views_join();
-          $this->query->table_queue[$revisions_table]['join']->construct($node_table, $revisions_table, 'nid', 'nid');
+          // Only add this join if there is not already a 'Revision NID of the
+          // content revision' contextual filter relationship.
+          if (empty($this->query->relationships[$this->relationship])) {
+            // Make sure UNIQUE is set!
+            $this->query->table_queue[$revisions_table]['join'] = new views_join();
+            $this->query->table_queue[$revisions_table]['join']->construct($node_table, $revisions_table, 'nid', 'nid');
+          }
           break;
       }
     }

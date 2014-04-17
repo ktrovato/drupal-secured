@@ -30,8 +30,14 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
       // See revisioning_node_presave().
     }
 
-    // Only add this radio selector if user has 'administer nodes' permission.
-    if (user_access('administer nodes')) {
+    // Only add this radio selector if user has the appropriate permissions.
+    // 'administer nodes' is required by default, but if configured
+    // appropriately, then any user premitted to publish this node will get the
+    // shortcut controls.
+    $add_radio_selector = variable_get('revisioning_publication_shortcuts', FALSE) ?
+      revisioning_user_node_access('publish revisions', $node) :
+      user_access('administer nodes');
+    if ($add_radio_selector) {
       // Expand and move this vertical tab to top, so that it's in user's face.
       if (isset($form['menu'])) {
         $form['menu']['#collapsed'] = TRUE;
@@ -64,9 +70,12 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
       $js_file = drupal_get_path('module', 'revisioning') . '/js/revisioning-radios.js';
       // After node.js.
       drupal_add_js($js_file, array('weight' => 1));
+      if (variable_get('revisioning_no_moderation_by_default', FALSE)) {
+        $form['revision_information']['revision_operation']['#default_value'] = REVISIONING_NEW_REVISION_NO_MODERATION;
+      }
     }
     else {
-      // For non-admin don't show radiobox, just set default, hidden on form.
+      // For non-admin don't show radios, just set default, hidden on form.
       // Note that $form['revision_information']['revision'] is already set.
       $form['revision_moderation'] = array(
         '#type' => 'value',
@@ -233,7 +242,7 @@ function revisioning_form_node_revision_revert_confirm_alter(&$form, &$form_stat
  *
  * We only add "pre" submit handler, because "post delete" event is already
  * available via hook_nodeapi().
- * 
+ *
  * @see node_revision_delete_confirm()
  */
 function revisioning_form_node_revision_delete_confirm_alter(&$form, &$form_state) {

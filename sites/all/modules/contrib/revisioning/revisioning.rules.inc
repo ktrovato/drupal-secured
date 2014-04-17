@@ -59,6 +59,10 @@ function _revisioning_rules_event_variables() {
       'description' => t('The acting user.'),
       'handler' => 'revisioning_events_argument_global_user',
     ),
+    'node' => array(
+      'type' => 'node',
+      'label' => t('target node.'),
+    ),
     'revision' => array(
       // Type revisioning_revision' ?
       'type' => 'node',
@@ -98,12 +102,11 @@ function revisioning_events_argument_current_revision($arguments, $name, $info) 
 
 /**
  * Target revision author argument handler.
- *
-function revisioning_events_argument_target_revision_author($arguments,
-$name, $info) {
+ */
+function revisioning_events_argument_target_revision_author($arguments, $name, $info) {
   global $user;
   $node = $arguments['node'];
-  return $user; // user_load($node->revision_uid);
+  return user_load($node->revision_uid);
 }
 
 function revisioning_events_argument_node_author($arguments, $name, $info) {
@@ -111,8 +114,7 @@ function revisioning_events_argument_node_author($arguments, $name, $info) {
   return user_load($node->uid);
 }
 
-function revisioning_events_argument_current_revision_author($arguments, $name,
-$info) {
+function revisioning_events_argument_current_revision_author($arguments, $name, $info) {
   $node = $arguments['node'];
   $current_vid = $node->current_revision_id;
   if ($node->vid != $current_vid) {
