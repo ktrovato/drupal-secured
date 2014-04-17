@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Original author: Nic Ivy
@@ -37,6 +36,12 @@ function site_map_admin_settings_form() {
     '#title' => t('Show front page'),
     '#default_value' => variable_get('site_map_show_front', 1),
     '#description' => t('When enabled, this option will include the front page in the site map.'),
+  );
+  $form['site_map_content']['site_map_show_titles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show titles'),
+    '#default_value' => variable_get('site_map_show_titles', 1),
+    '#description' => t('When enabled, this option will show titles. Disable to not show section titles.'),
   );
   if (module_exists('blog')) {
     $form['site_map_content']['site_map_show_blogs'] = array(
@@ -76,6 +81,13 @@ function site_map_admin_settings_form() {
     '#options' => $menu_options,
     '#multiple' => TRUE,
   );
+  // Thanks for fix by zhuber at https://drupal.org/node/1331104#comment-5200266
+  $form['site_map_content']['site_map_show_menus_hidden'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show disabled menu items'),
+    '#default_value' => variable_get('site_map_show_menus_hidden', 0),
+    '#description' => t('When enabled, hidden menu links will also be shown.'),
+  );
   if (module_exists('faq')) {
     $form['site_map_content']['site_map_show_faq'] = array(
       '#type' => 'checkbox',
@@ -87,7 +99,7 @@ function site_map_admin_settings_form() {
   $vocab_options = array();
   if (module_exists('taxonomy')) {
     foreach (taxonomy_get_vocabularies() as $vocabulary) {
-      $vocab_options[$vocabulary->vid] = $vocabulary->name;
+      $vocab_options[$vocabulary->machine_name] = $vocabulary->name;
     }
   }
   $form['site_map_content']['site_map_show_vocabularies'] = array(
@@ -102,6 +114,12 @@ function site_map_admin_settings_form() {
     '#type' => 'fieldset',
     '#title' => t('Categories settings'),
   );
+  $form['site_map_taxonomy_options']['site_map_show_description'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show category description'),
+    '#default_value' => variable_get('site_map_show_description', 1),
+    '#description' => t('When enabled, this option will show the category description.'),
+  );
   $form['site_map_taxonomy_options']['site_map_show_count'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show node counts by categories'),
@@ -114,7 +132,7 @@ function site_map_admin_settings_form() {
     '#default_value' => variable_get('site_map_categories_depth', 'all'),
     '#size' => 3,
     '#maxlength' => 10,
-    '#description' => t('Specify how many subcategories should be included on the categorie page. Enter "all" to include all subcategories, "0" to include no subcategories, or "-1" not to append the depth at all.'),
+    '#description' => t('Specify how many levels of subcategories should be included. Enter a positive integer, or "all" to include all levels.'),
   );
   $form['site_map_taxonomy_options']['site_map_term_threshold'] = array(
     '#type' => 'textfield',
@@ -148,7 +166,7 @@ function site_map_admin_settings_form() {
     '#options' => array(
       0 => t('None'),
       1 => t('Include on the right side'),
-      2 => t('Include on the left side')
+      2 => t('Include on the left side'),
     ),
     '#description' => t('When enabled, this option will show links to the RSS feeds for each category and blog.'),
   );

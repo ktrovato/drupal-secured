@@ -1,0 +1,22 @@
+--- advagg.missing.inc
++++ advagg.missing.inc
+@@ -222,13 +225,17 @@
+  *   Just the filename no path information.
+  * @param bool $no_alters
+  *   Set to TRUE to do the bare amount of processing on the file.
++ * @param array $data
++ *   Output from advagg_get_hashes_from_filename().
+  *
+  * @return mixed
+  *   On failure a string saying why it failed.
+  *   On success the $files_to_save array.
+  */
+-function advagg_missing_create_file($filename, $no_alters = FALSE) {
+-  $data = advagg_get_hashes_from_filename($filename);
++function advagg_missing_create_file($filename, $no_alters = FALSE, $data = array()) {
++  if (empty($data)) {
++    $data = advagg_get_hashes_from_filename($filename);
++  }
+   if (is_array($data)) {
+     list($type, $aggregate_filenames_hash, $aggregate_contents_hash, $aggregate_settings) = $data;
+   }

@@ -1,0 +1,78 @@
+diff --git a/advagg.cache.inc b/advagg.cache.inc
+index 0a475e5..e8053ef 100644
+--- a/advagg.cache.inc
++++ b/advagg.cache.inc
+@@ -209,9 +209,8 @@ function advagg_delete_files_if_stale($files) {
+     if (is_array($data)) {
+       list($type, $aggregate_filenames_hash, $aggregate_contents_hash, $aggregate_settings) = $data;
+     }
+-
+-    // Can not get data on file, remove it.
+     else {
++      // Can not get data on file, remove it.
+       file_unmanaged_delete($uri);
+       if (file_exists($uri . '.gz')) {
+         file_unmanaged_delete($uri . '.gz');
+diff --git a/advagg.missing.inc b/advagg.missing.inc
+index 850b48f..78eb88a 100644
+--- a/advagg.missing.inc
++++ b/advagg.missing.inc
+@@ -41,16 +41,22 @@ function advagg_missing_generate() {
+   $filename = explode('?', $filename);
+   $filename = array_shift($filename);
+ 
++  // Quit ASAP if filename does not match the AdvAgg pattern.
++  $data = advagg_get_hashes_from_filename($filename);
++  if (is_string($data) || !is_array($data)) {
++    return $data;
++  }
++
+   $lock_name = 'advagg_' . $filename;
+   $uri = $GLOBALS['base_path'] . $_GET['q'];
+   $created = FALSE;
+   $files_to_save = array();
+   if (lock_acquire($lock_name, 10) || $redirect_counter > 4) {
+     if ($redirect_counter > 4) {
+-      $return = advagg_missing_create_file($filename, TRUE);
++      $return = advagg_missing_create_file($filename, TRUE, $data);
+     }
+     else {
+-      $return = advagg_missing_create_file($filename);
++      $return = advagg_missing_create_file($filename, FALSE, $data);
+     }
+     lock_release($lock_name);
+     if (!is_array($return)) {
+@@ -67,11 +73,8 @@ function advagg_missing_generate() {
+     // be available in menu_execute_active_handler() resulting in a 404.
+     lock_wait($lock_name, 10);
+     if (file_exists($uri) && filesize($uri) > 0) {
+-      $data = advagg_get_hashes_from_filename($filename);
+-      if (is_array($data)) {
+-        $type = $data[0];
+-        $created = TRUE;
+-      }
++      $type = $data[0];
++      $created = TRUE;
+     }
+   }
+ 
+@@ -219,13 +222,17 @@ function advagg_missing_set_farfuture_headers() {
+  *   Just the filename no path information.
+  * @param bool $no_alters
+  *   Set to TRUE to do the bare amount of processing on the file.
++ * @param array $data
++ *   Output from advagg_get_hashes_from_filename().
+  *
+  * @return mixed
+  *   On failure a string saying why it failed.
+  *   On success the $files_to_save array.
+  */
+-function advagg_missing_create_file($filename, $no_alters = FALSE) {
+-  $data = advagg_get_hashes_from_filename($filename);
++function advagg_missing_create_file($filename, $no_alters = FALSE, $data = array()) {
++  if (empty($data)) {
++    $data = advagg_get_hashes_from_filename($filename);
++  }
+   if (is_array($data)) {
+     list($type, $aggregate_filenames_hash, $aggregate_contents_hash, $aggregate_settings) = $data;
+   }

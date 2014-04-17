@@ -1,11 +1,11 @@
 <?php
-
 /**
  * @file
  * site_map.theme.inc
  *
  * Site map theme functions.
  */
+
 
 /**
  * Returns HTML for a site map feed icon legend.
@@ -19,6 +19,7 @@ function theme_site_map_rss_legend() {
   return $output;
 }
 
+
 /**
  * Preprocesses the variables for theme_site_map_box().
  */
@@ -26,24 +27,29 @@ function template_preprocess_site_map_box(&$variables) {
   $variables['attributes']['class'][] = 'site-map-box';
 }
 
+
 /**
  * Returns HTML for a themed site map box.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - title: The subject of the box.
  *   - content: The content of the box.
  *   - attributes:  Optional attributes for the box.
+ *
+ * @return string
+ *   Returns sitemap display in DIV.
  */
 function theme_site_map_box($variables) {
   $title = $variables['title'];
   $content = $variables['content'];
   $attributes = $variables['attributes'];
+  $options = $variables['options'];
 
   $output = '';
   if (!empty($title) || !empty($content)) {
     $output .= '<div' . drupal_attributes($attributes) . '>';
-    if (!empty($title)) {
+    if (!empty($title) && isset($options['show_titles'])) {
       $output .= '<h2 class="title">' . $title . '</h2>';
     }
     if (!empty($content)) {
@@ -55,13 +61,17 @@ function theme_site_map_box($variables) {
   return $output;
 }
 
+
 /**
  * Returns HTML for a feed icon with link.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - url: The url of the feed.
  *   - type: The type of feed icon.
+ *
+ * @return string
+ *   Constructs and returns html with feed image icon.
  */
 function theme_site_map_feed_icon($variables) {
   $output = '';
@@ -93,27 +103,33 @@ function theme_site_map_feed_icon($variables) {
   return $output;
 }
 
+
 /**
- * This is a clone of the core template_preprocess_menu_tree() function with the exception of
- * the site_map specific class name used in the UL that also allow themers to
- * override the function only for the site map page.
- *
  * Preprocesses the rendered tree for theme_site_map_menu_tree().
+ *
+ * This is a clone of the core template_preprocess_menu_tree() function
+ * with the exception of the site_map specific class name used in the
+ * UL that also allow themers to override the function only
+ * for the site map page.
  */
 function template_preprocess_site_map_menu_tree(&$variables) {
   $variables['tree'] = $variables['tree']['#children'];
 }
 
+
 /**
+ * Returns HTML for a wrapper for a menu sub-tree.
+ *
  * This is a clone of the core theme_menu_tree() function with the exception of
  * the site_map specific class name used in the UL that also allow themers to
  * override the function only for the site map page.
  *
- * Returns HTML for a wrapper for a menu sub-tree.
- *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - tree: An HTML string containing the tree's items.
+ *
+ * @return string
+ *   Returns the html string with the <ul> for the menu tree.
  *
  * @see template_preprocess_menu_tree()
  * @ingroup themeable
@@ -122,15 +138,19 @@ function theme_site_map_menu_tree($variables) {
   return '<ul class="site-map-menu">' . $variables['tree'] . '</ul>';
 }
 
+
 /**
+ * Returns HTML for a menu link and submenu.
+ *
  * This is a one by one clone of the core theme_menu_link() function that allows
  * custom theming of the site map page items.
  *
- * Returns HTML for a menu link and submenu.
- *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - element: Structured array data for a menu link.
+ *
+ * @return string
+ *   Returns html string for menu link.
  *
  * @ingroup themeable
  */
@@ -144,6 +164,7 @@ function theme_site_map_menu_link(array $variables) {
   $output = l($element['#title'], $element['#href'], $element['#localized_options']);
   return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
 }
+
 
 /**
  * Preprocesses the variables for site-map.tpl.php.
@@ -164,6 +185,10 @@ function template_preprocess_site_map(&$variables) {
     $variables['front_page'] = _site_map_front_page();
   }
 
+  if (variable_get('site_map_show_titles', 1)) {
+    $variables['show_titles'] = TRUE;
+  }
+
   if (variable_get('site_map_show_blogs', 1)) {
     $variables['blogs'] = _site_map_blogs();
   }
@@ -181,7 +206,7 @@ function template_preprocess_site_map(&$variables) {
   // Compile the vocabulary trees.
   $variables['taxonomys'] = _site_map_taxonomys();
 
-  // Invoke all custom modules and get themed HTML to be integrated into the site map.
+  // Invoke all custom modules and integrate themed HTML into the site map.
   $additional = module_invoke_all('site_map');
   foreach ($additional as $themed_site_map_code) {
     $variables['additional'] .= $themed_site_map_code;

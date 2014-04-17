@@ -583,9 +583,10 @@ function wysiwyg_ckeditor_proxy_plugin_settings($editor, $profile, $plugins) {
       'title' => $plugin['title'],
       'icon' => base_path() . $plugin['icon path'] . '/' . $plugin['icon file'],
       'iconTitle' => $plugin['icon title'],
-      // @todo These should only be set if the plugin defined them.
-      'css' => base_path() . $plugin['css path'] . '/' . $plugin['css file'],
     );
+    if (!empty($plugin['css path']) && !empty($plugin['css file'])) {
+      $settings[$name]['css'] = base_path() . $plugin['css path'] . '/' . $plugin['css file'];
+    }
   }
   return $settings;
 }

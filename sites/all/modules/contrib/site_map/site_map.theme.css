@@ -20,9 +20,9 @@
   padding-left: 0;
 }
 #site-map .site-map-rss-left li {
-  list-style-type: none;
-  list-style-image: none;
   background-image: none;
+  list-style-image: none;
+  list-style-type: none;
   margin: 0;
   padding: 0;
 }

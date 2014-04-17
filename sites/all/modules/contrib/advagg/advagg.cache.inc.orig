@@ -201,8 +201,9 @@ function advagg_delete_files_if_stale($files) {
     if (is_array($data)) {
       list($type, $aggregate_filenames_hash, $aggregate_contents_hash, $aggregate_settings) = $data;
     }
+
+    // Can not get data on file, remove it.
     else {
-      // Can not get data on file, remove it.
       file_unmanaged_delete($uri);
       if (file_exists($uri . '.gz')) {
         file_unmanaged_delete($uri . '.gz');

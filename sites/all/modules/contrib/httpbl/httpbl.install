@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function httpbl_schema() {
+  $schema['httpbl'] = array(
+    'description' => t('Stores http:BL database cache.'),
+    'fields' => array(
+      'hostname' => array(
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE,
+        'description' => t('Primary key: Hostname (IP address)'),
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Cache status (HTTPBL_LIST_* constants)'),
+      ),
+      'expire' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11',
+        'description' => t('A Unix timestamp indicating when the cache entry should expire.'),
+      ),
+    ),
+    'primary key' => array('hostname'),
+    'indexes' => array(
+      'expire' => array('expire')
+    ),
+  );
+  return $schema;
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function httpbl_uninstall() {
+  drupal_uninstall_schema('httpbl');
+  db_delete('variable')
+    ->condition('name', 'httpbl_%%', 'LIKE')
+    ->execute();
+}
