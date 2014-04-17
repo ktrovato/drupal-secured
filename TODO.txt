@@ -1,0 +1,26 @@
+Live Deault Simple Installer
+
+1. Change zen to omega. Leave bootstrap. Make Omega default. Or just use Omega, it has a really nice desktop and mobile.
+
+2. Replace AdvAgg?? Waiting on patch. If not fixed, will need replaced.
+The developer doesn't find it exploitable. Waiting for security team recomendations.
+
+Extended Versions
+This version of the secured drupal installer includes some extra features like mega menus, slide shows and all that crap
+1. Add TB Mega Menu?
+2. Eval and Add Views slide show
+
+Custom Versions - Based on industry
+Higher Ed
+Library
+
+Law Firm
+Doctor
+
+Document Management - This is in the works
+
+Project Management
+
+
+Module
+I already have a module to run this as an update on an existing site. Need to finish it up and test it and put on drupal.
