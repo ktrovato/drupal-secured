@@ -4,9 +4,9 @@ description = "Turn this site into a profiler distribution fast!"
 package = "Development"
 core = "7.x"
 configure = admin/config/development/profiler_builder
-; Information added by Drupal.org packaging script on 2014-02-13
-version = "7.x-1.0+8-dev"
+; Information added by Drupal.org packaging script on 2014-05-16
+version = "7.x-1.0+9-dev"
 core = "7.x"
 project = "profiler_builder"
-datestamp = "1392325107"
+datestamp = "1400244828"
 
