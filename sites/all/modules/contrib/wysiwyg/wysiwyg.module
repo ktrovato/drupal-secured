@@ -180,16 +180,6 @@ function wysiwyg_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_form_alter().
- */
-function wysiwyg_form_alter(&$form, &$form_state) {
-  // Teaser splitter is unconditionally removed and NOT supported.
-  if (isset($form['body_field'])) {
-    unset($form['body_field']['teaser_js']);
-  }
-}
-
-/**
  * Implements hook_element_info_alter().
  */
 function wysiwyg_element_info_alter(&$types) {
@@ -230,22 +220,39 @@ function wysiwyg_pre_render_text_format($element) {
   if (!empty($field['#resizable'])) {
     $resizable = 1;
     drupal_add_js('misc/textarea.js');
+    $settings['resizable'] = 1;
+  }
+  if (isset($element['summary']) && $element['summary']['#type'] == 'textarea') {
+    $settings['summary'] = $element['summary']['#id'];
+  }
+
+  if (!$format_field['format']['#access'] || (isset($format_field['#access']) && !$format_field['#access'])) {
+    // Directly specify which the single available format is.
+    $available_formats = array($format_field['format']['#value'] => $format_field['format']['#options'][$format_field['format']['#value']]);
+    $settings['activeFormat'] = $format_field['format']['#value'];
+  }
+  else {
+    // Let the client check the selectbox for the active format.
+    $available_formats = $format_field['format']['#options'];
+    $settings['select'] = $format_field['format']['#id'];
   }
   // Determine the available text formats.
-  foreach ($format_field['format']['#options'] as $format_id => $format_name) {
+  foreach ($available_formats as $format_id => $format_name) {
     $format = 'format' . $format_id;
-    // Initialize default settings, defaulting to 'none' editor.
-    $settings[$format] = array(
-      'editor' => 'none',
-      'status' => 1,
-      'toggle' => 1,
-      'resizable' => $resizable,
-    );
 
     // Fetch the profile associated to this text format.
     $profile = wysiwyg_get_profile($format_id);
     if ($profile) {
+      // Initialize default settings, defaulting to 'none' editor.
+      $settings[$format] = array(
+        'editor' => 'none',
+        'status' => 1,
+        'toggle' => 1,
+      );
       $loaded = TRUE;
+      if (isset($profile->settings['add_to_summaries']) && !$profile->settings['add_to_summaries']) {
+        $settings[$format]['skip_summary'] = 1;
+      }
       $settings[$format]['editor'] = $profile->editor;
       $settings[$format]['status'] = (int) wysiwyg_user_get_status($profile);
       if (isset($profile->settings['show_toggle'])) {
@@ -260,48 +267,25 @@ function wysiwyg_pre_render_text_format($element) {
       wysiwyg_add_editor_settings($profile, $theme);
     }
   }
-  // Use a hidden element for a single text format.
-  if (!$format_field['format']['#access'] || (isset($format_field['#access']) && !$format_field['#access'])) {
-    $format_id = $format_field['format']['#value'];
-    $element['wysiwyg'] = array(
-      '#type' => 'hidden',
-      '#name' => $format_field['format']['#name'],
-      '#value' => $format_id,
-      '#attributes' => array(
-        'id' => $format_field['format']['#id'],
-        'class' => array('wysiwyg'),
-      ),
-    );
-    $element['wysiwyg']['#attached']['js'][] = array(
-      'data' => array(
-        'wysiwyg' => array(
-          'triggers' => array(
-            $format_field['format']['#id'] => $settings,
-          ),
+  $element['value']['#attributes']['class'][] = 'wysiwyg';
+  $element['#attached']['js'][] = array(
+    'data' => array(
+      'wysiwyg' => array(
+        'triggers' => array(
+          $element['value']['#id'] => $settings,
         ),
       ),
-      'type' => 'setting',
-    );
-  }
-  // Otherwise, attach to text format selector.
-  else {
-    $format_field['format']['#attributes']['class'][] = 'wysiwyg';
-    $format_field['format']['#attached']['js'][] = array(
-      'data' => array(
-        'wysiwyg' => array(
-          'triggers' => array(
-            $format_field['format']['#id'] => $settings,
-          ),
-        ),
-      ),
-      'type' => 'setting',
-    );
-  }
+    ),
+    'type' => 'setting',
+  );
 
   // If we loaded at least one editor, then the 'none' editor will
   // handle resizable textareas instead of core.
   if (isset($loaded) && $resizable) {
     $field['#resizable'] = FALSE;
+    if (isset($element['summary'])) {
+      $element['summary']['#resizable'] = FALSE;
+    }
   }
 
   return $element;

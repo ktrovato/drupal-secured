@@ -329,14 +329,13 @@ EOL;
  *   Drupal.settings.wysiwyg.configs.{editor}
  */
 function wysiwyg_ckeditor_settings($editor, $config, $theme) {
-  $default_skin = (version_compare($editor['installed version'], '4.0.0', '<') ? 'kama' : 'mono');
+  $default_skin = (version_compare($editor['installed version'], '4.0.0', '<') ? 'kama' : 'moono');
   $settings = array(
     // Needed to make relative paths work in the editor.
     'baseHref' => $GLOBALS['base_url'] . '/',
     'width' => 'auto',
     // For better compatibility with smaller textareas.
     'resize_minWidth' => 450,
-    'height' => 420,
     // @todo Do not use skins as themes and add separate skin handling.
     'theme' => 'default',
     'skin' => !empty($theme) ? $theme : $default_skin,

@@ -11,9 +11,9 @@ features[wysiwyg_template][] = table_of_terms
 features[wysiwyg_template][] = table_style_2
 features[wysiwyg_template][] = topic_reading
 
-; Information added by  packaging script on 2013-11-20
-version = "7.x-4.0"
+; Information added by Drupal.org packaging script on 2014-06-09
+version = "7.x-4.1"
 core = "7.x"
 project = "textbook"
-datestamp = "1384919350"
+datestamp = "1402320233"
 
