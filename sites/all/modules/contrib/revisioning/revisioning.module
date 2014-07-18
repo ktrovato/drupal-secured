@@ -644,7 +644,9 @@ function revisioning_node_update($node) {
     }
   }
   // Create file revision entries for files created using older versions.
-  $old_node = isset($node->original) ? $node->original : NULL;
+  // $old_node = isset($node->original) ? $node->original : NULL;
+  // [#2276657]
+  $old_node = isset($node->original) && !empty($node->original) ? $node->original : NULL;
   if (isset($old_node) && !empty($file_fields)) {
     foreach ($file_fields as $file_field) {
       if ($old_files = field_get_items('node', $old_node, $file_field['field_name'], $old_node->language)) {
@@ -703,35 +705,40 @@ function revisioning_node_insert($node) {
 }
 
 /**
- * Implements hook_node_access_records().
- *
- * Replaces all node properties and fields to those of the current node,
- * so node access modules implementing this hook do not use values
- * from revisions that are still in moderation.
+ * Implements hook_node_delete().
  */
-function revisioning_node_access_records($node) {
-  if (!revisioning_revision_is_current($node)) {
-    $current_node = node_load($node->nid, NULL, TRUE);
-    foreach (get_object_vars($node) as $k => $value) {
-      unset($node->$k);
-      if (isset($current_node->$k)) {
-        $node->$k = $current_node->$k;
-      }
-    }
+function revisioning_node_delete($node) {
+  if ($revisions = node_revision_list($node)) {
+    $vids = array_keys($revisions);
+    db_delete('file_usage')->condition('module', 'revisioning')->condition('id', $vids, 'IN')->execute();
   }
-  return array();
 }
 
 /**
- * Implements hook_module_implements_alter().
+ * Implements hook_node_access_records_alter().
  *
- * Ensures that revisioning_node_access_records() runs before other modules.
+ * If the node is not the current node this function clears the grants array and
+ * rebuilds it using the current node.
  */
-function revisioning_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'node_access_records') {
-    $group = array('revisioning' => $implementations['revisioning']);
-    unset($implementations['revisioning']);
-    $implementations = $group + $implementations;
+function revisioning_node_access_records_alter(&$grants, $node) {
+
+  if (!revisioning_revision_is_current($node)) {
+    $current_node = node_load($node->nid, NULL, TRUE);
+    $grants = array();
+    foreach (module_implements('node_access_records') as $module) {
+      $function = $module . '_node_access_records';
+      if (function_exists($function)) {
+        $result = call_user_func_array($function, array($current_node));
+        if (isset($result)) {
+          if (is_array($result)) {
+            $grants = array_merge_recursive($grants, $result);
+          }
+          else {
+            $grants[] = $result;
+          }
+        }
+      }
+    }
   }
 }
 

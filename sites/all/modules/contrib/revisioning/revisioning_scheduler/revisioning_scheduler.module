@@ -245,7 +245,7 @@ function revisioning_scheduler_revisionapi($op, $node) {
 
     // The revision is being deleted. If it is scheduled for publishing, i.e.
     // vid exists in {revisioning_scheduler} table, remove the scheduler entry.
-    case 'pre delete';
+    case 'pre delete':
       _revisioning_scheduler_unschedule($node->vid);
       break;
   }

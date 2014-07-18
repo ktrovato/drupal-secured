@@ -32,6 +32,10 @@ function revisioning_scheduler_views_data() {
       'left_field' => 'vid',
       'field' => 'revision_vid',
     ),
+    'node' => array(
+      'left_field' => 'nid',
+      'field' => 'revision_nid',
+    ),
     // Directly links to the users table. See also relationship details at
     // $data['revisioning_scheduler']['revision_uid'].
     'users' => array(
@@ -52,6 +56,12 @@ function revisioning_scheduler_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
+    ),
+    'relationship' => array(
+      'base' => 'node',
+      'field' => 'revision_nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Content revision (NID)'),
     ),
   );
 
@@ -87,7 +97,7 @@ function revisioning_scheduler_views_data() {
       'base' => 'node_revision',
       'field' => 'revision_vid',
       'handler' => 'views_handler_relationship',
-      'label' => t('Content revision'),
+      'label' => t('Content revision (VID)'),
     ),
   );
 

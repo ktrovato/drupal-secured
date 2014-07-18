@@ -47,6 +47,25 @@ function revisioning_rules_event_info() {
 }
 
 /**
+ * Implements hook_rules_event_info_alter().
+ *
+ * Add revision variable to all events with node. [#2232451]
+ */
+function revisioning_rules_event_info_alter(&$events) {
+  foreach ($events as $key => $event) {
+    if (isset($event['variables'])) {
+      foreach ($event['variables'] as $name => $variable) {
+        if ($variable['type'] == 'node') {
+          $extra = _revisioning_rules_event_variables();
+          unset($extra['node']);
+          $events[$key]['variables'] += $extra;
+        }
+      }
+    }
+  }
+}
+
+/**
  * Returns event variables suitable for use with a node revision event.
  *
  * (aka Data Selectors)

@@ -51,21 +51,18 @@ function revisioning_tokens($type, $tokens, array $data = array(), array $option
   $replacements = array();
 
   if (!empty($data['revision'])) {
-    $node = $data['revision'];
+    $revision = $data['revision'];
   }
   elseif (!empty($data['entity']) && $data['entity_type'] == 'node') {
     // When Token module is enabled.
-    $node = $data['entity'];
+    $revision = $data['entity'];
+  }
+  elseif (!empty($data['node'])) {
+    $revision = $data['node'];
   }
   else {
     return $replacements;
   }
-  
-  if (!isset($node->nid)) {
-    return $replacements;
-  }
-  // This may not be necessary in all cases, but node data is cached anyway.
-  $revision = node_load($node->nid, $node->vid);
 
   $sanitize = !empty($options['sanitize']);
 
@@ -78,7 +75,8 @@ function revisioning_tokens($type, $tokens, array $data = array(), array $option
         break;
 
       case 'revision-body':
-        $text = $revision->body[$revision->language][0]['value'];
+        $text = reset($revision->body);
+        $text = $text[0]['value'];
         $replacements[$original] = $sanitize ? check_plain($text) : $text;
         break;
 
@@ -88,21 +86,21 @@ function revisioning_tokens($type, $tokens, array $data = array(), array $option
 
       // Default values for the chained tokens handled below.
       case 'revision-author':
-        $author = user_load($revision->uid);
+        $author = user_load($revision->revision_uid);
         $name = format_username($author);
         $replacements[$original] = $sanitize ? check_plain($name) : $name;
         break;
 
       case 'revision-created':
         $langcode = empty($options['language']->language) ? LANGUAGE_NONE : $options['language']->language;
-        $replacements[$original] = format_date($revision->created, 'medium', '', NULL, $langcode);
+        $replacements[$original] = format_date($revision->revision_timestamp, 'medium', '', NULL, $langcode);
         break;
     }
   }
   // Chained tokens for revision author and revision timestamp.
   // These fan out into sub-token fields, e.g revision-author:mail etc.
   if ($author_tokens = token_find_with_prefix($tokens, 'revision-author')) {
-    $author = user_load($revision->uid);
+    $author = user_load($revision->revision_uid);
     $replacements += token_generate('user', $author_tokens, array('user' => $author), $options);
   }
   if ($created_tokens = token_find_with_prefix($tokens, 'revision-created')) {

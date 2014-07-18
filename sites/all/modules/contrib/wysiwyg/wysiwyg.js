@@ -195,7 +195,7 @@ Drupal.behaviors.attachWysiwyg = {
           });
         }
       }
-      fieldInfo.enabled = fieldInfo.formats[fieldInfo.activeFormat].enabled;
+      fieldInfo.enabled = fieldInfo.formats[fieldInfo.activeFormat] && fieldInfo.formats[fieldInfo.activeFormat].enabled;
       // Directly attach this editor, if the input format is enabled or there is
       // only one input format at all.
       Drupal.wysiwygAttach(context, trigger.field);

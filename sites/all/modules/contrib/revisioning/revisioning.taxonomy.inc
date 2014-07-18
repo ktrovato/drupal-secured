@@ -68,7 +68,7 @@ function revisioning_get_tids($vid) {
     $sql = "SELECT {$field}_tid AS tid FROM {field_revision_$field} WHERE revision_id = :vid AND entity_type = 'node' AND deleted = 0 ORDER BY tid";
     $result = db_query($sql, array(':vid' => $vid));
     foreach ($result as $term) {
-      $tids[] = $term->tid;
+      $tids[$term->tid] = $term->tid;
     }
   }
   return $tids;
