@@ -2,14 +2,18 @@
 
 /**
  * The form displayed on admin/structure/crumbs(/weights)
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param string $type
+ *   E.g. 'tabledrag' or 'textual' or 'expansible'.
+ *
+ * @return array
  */
 function crumbs_admin_weights_form($form, $form_state, $type = 'tabledrag') {
 
   $form = array();
 
-  /**
-   * @var crumbs_Container_CachedLazyPluginInfo $info
-   */
   $info = crumbs()->pluginInfo;
 
   // Re-discover plugins, when the admin visits the weights configuration form.
@@ -149,7 +153,7 @@ function crumbs_admin_display_form() {
       // Theme is disabled.
       continue;
     }
-    $path = 'admin/appearance_settings/' . $theme_name;
+    $path = 'admin/appearance/settings/' . $theme_name;
     $link = l($theme_obj->info['name'], $path);
     if (!isset($originals[$theme_name])) {
       $f = 'theme_breadcrumb';

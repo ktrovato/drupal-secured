@@ -37,7 +37,7 @@ class og_CrumbsMultiPlugin_group_post implements crumbs_MultiPlugin {
 
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     $items = field_get_items('node', $node, 'group_audience');
@@ -50,11 +50,18 @@ class og_CrumbsMultiPlugin_group_post implements crumbs_MultiPlugin {
         }
       }
     }
+
+    return NULL;
   }
 
   /**
    * This method can be overridden by custom plugins that inherit from this one,
    * e.g. to set a different parent for group events than for group discussions.
+   *
+   * @param int $group_nid
+   * @param object $group_post
+   *
+   * @return string
    */
   protected function getParentPath($group_nid, $group_post) {
     return 'node/' . $group_nid;
@@ -70,6 +77,7 @@ class og_CrumbsMultiPlugin_group_post implements crumbs_MultiPlugin {
      * }
      */
   }
+
 }
 
 /**
@@ -100,16 +108,25 @@ class og_CrumbsMultiPlugin_groups_overview implements crumbs_MultiPlugin {
     }
   }
 
+  /**
+   * @param string $path
+   * @param array $item
+   *
+   * @return array|null
+   */
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     $items = field_get_items('node', $node, 'group_group');
     if ($items) {
       return array($node->type => 'group-list');
     }
+
+    return NULL;
   }
+
 }
 
 /**
@@ -131,7 +148,10 @@ class og_CrumbsMonoPlugin_groups_overview_title implements crumbs_MonoPlugin_Fin
     if ($item['route'] === 'group-list') {
       return t('Groups');
     }
+
+    return NULL;
   }
+
 }
 
 /**
@@ -178,7 +198,7 @@ class og_CrumbsMultiPlugin_my_groups_overview implements crumbs_MultiPlugin {
    */
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     if (og_is_group_type('node', $node->type)) {
@@ -189,5 +209,8 @@ class og_CrumbsMultiPlugin_my_groups_overview implements crumbs_MultiPlugin {
         }
       }
     }
+
+    return NULL;
   }
+
 }

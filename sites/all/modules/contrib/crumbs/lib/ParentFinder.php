@@ -8,7 +8,7 @@
 class crumbs_ParentFinder {
 
   /**
-   * @var crumbs_PluginEngine
+   * @var crumbs_PluginSystem_PluginEngine
    */
   protected $pluginEngine;
 
@@ -24,7 +24,7 @@ class crumbs_ParentFinder {
   protected $parents = array();
 
   /**
-   * @param crumbs_PluginEngine $pluginEngine
+   * @param crumbs_PluginSystem_PluginEngine $pluginEngine
    * @param crumbs_Router $router
    */
   function __construct($pluginEngine, $router) {
@@ -35,6 +35,7 @@ class crumbs_ParentFinder {
   /**
    * @param string $path
    * @param array &$item
+   *
    * @return string
    */
   function getParentPath($path, &$item) {
@@ -51,6 +52,7 @@ class crumbs_ParentFinder {
   /**
    * @param string $path
    * @param array &$item
+   *
    * @return string|bool
    */
   protected function _findParentPath($path, &$item) {
@@ -68,4 +70,5 @@ class crumbs_ParentFinder {
     $parent_path = $this->router->reducePath($path);
     return isset($parent_path) ? $parent_path : FALSE;
   }
+
 }

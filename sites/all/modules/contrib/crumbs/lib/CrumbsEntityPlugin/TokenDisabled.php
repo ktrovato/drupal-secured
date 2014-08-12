@@ -35,5 +35,8 @@ class crumbs_CrumbsEntityPlugin_TokenDisabled implements crumbs_EntityPlugin {
         return $parent;
       }
     }
+
+    return NULL;
   }
+
 }

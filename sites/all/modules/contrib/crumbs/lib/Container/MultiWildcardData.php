@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @property crumbs_Container_WildcardData|array $basicMethods
+ * @property crumbs_Container_WildcardData|array $routeMethods
+ * @property crumbs_Container_WildcardData|array $routes
+ * @property crumbs_Container_WildcardData|array $descriptions
+ */
 class crumbs_Container_MultiWildcardData implements ArrayAccess, IteratorAggregate {
 
   /**

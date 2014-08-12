@@ -36,10 +36,15 @@ class taxonomy_CrumbsMultiPlugin_termParent implements crumbs_MultiPlugin {
   /**
    * Terms get their parent terms as breadcrumb parent.
    * The method name matches the router path "taxonomy/term/%".
+   *
+   * @param string $path
+   * @param array $item
+   *
+   * @return array
    */
   function findParent__taxonomy_term_x($path, $item) {
     if (FALSE === $term = crumbs_Util::itemExtractEntity($item, 'taxonomy_term', 2)) {
-      return;
+      return NULL;
     }
 
     $parents = taxonomy_get_parents($term->tid);
@@ -51,5 +56,7 @@ class taxonomy_CrumbsMultiPlugin_termParent implements crumbs_MultiPlugin {
         }
       }
     }
+
+    return NULL;
   }
 }

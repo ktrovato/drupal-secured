@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Wrapper for routing-related Drupal core functions.
+ */
 class crumbs_Router {
 
   /**
@@ -69,6 +72,8 @@ class crumbs_Router {
    *   Starting path or alias
    * @param int $depth
    *   Max number of fragments we try to chop off. -1 means no limit.
+   *
+   * @return string|null
    */
   function reducePath($path, $depth = -1) {
     $fragments = explode('/', $path);
@@ -81,10 +86,13 @@ class crumbs_Router {
       }
       --$depth;
     }
+
+    return NULL;
   }
 
   /**
    * @param string $path
+   *
    * @return string
    */
   function getNormalPath($path) {
@@ -93,7 +101,9 @@ class crumbs_Router {
 
   /**
    * @param string $url
-   * @return string
+   *
+   * @return bool
+   *   TRUE, if external path.
    */
   function urlIsExternal($url) {
     return url_is_external($url);

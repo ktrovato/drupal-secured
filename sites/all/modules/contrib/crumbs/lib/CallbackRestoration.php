@@ -12,28 +12,31 @@
 class crumbs_CallbackRestoration {
 
   /**
-   * @var array
-   *   Callbacks by module and "key", where
-   *   $module . '.' . $key === $plugin_key
-   *   $this->callbacks[$module][$key] = $callback
+   * @var crumbs_InjectedAPI_Collection_CallbackCollection
    */
-  protected $callbacks = array();
+  private $callbackCollection;
+
+  /**
+   * @var true[]
+   *   Format: $[$module] = true
+   */
+  private $modulesRestored = array();
 
   /**
    * @var crumbs_InjectedAPI_hookCrumbsPlugins
    */
-  protected $api;
-
-  /**
-   * @var bool
-   */
-  protected $discoveryOngoing = FALSE;
+  private $api;
 
   /**
    * Constructor
    */
   function __construct() {
-    $this->api = new crumbs_InjectedAPI_hookCrumbsPlugins($this->discoveryOngoing);
+    $this->callbackCollection = new crumbs_InjectedAPI_Collection_CallbackCollection;
+    $this->api = new crumbs_InjectedAPI_hookCrumbsPlugins(
+      new crumbs_InjectedAPI_Collection_PluginCollection,
+      new crumbs_InjectedAPI_Collection_EntityPluginCollection,
+      $this->callbackCollection,
+      new crumbs_InjectedAPI_Collection_DefaultValueCollection);
   }
 
   /**
@@ -45,32 +48,19 @@ class crumbs_CallbackRestoration {
    * @return callback
    */
   function restoreCallback($module, $key, $callback_type) {
-    if (!isset($this->callbacks[$module])) {
-      $this->restoreModuleCallbacks($module);
+
+    if (!isset($this->modulesRestored[$module])) {
+      $f = $module . '_crumbs_plugins';
+      // The module may have been disabled in the meantime,
+      // or the function may have been removed by a developer.
+      if (function_exists($f)) {
+        $this->api->setModule($module);
+        $f($this->api);
+      }
+      $this->modulesRestored[$module] = TRUE;
     }
-    return isset($this->callbacks[$module][$callback_type][$key])
-      ? $this->callbacks[$module][$callback_type][$key]
-      : FALSE;
+
+    return $this->callbackCollection->getCallbackOrFalse($module, $callback_type, $key);
   }
 
-  /**
-   * Restore/load all callbacks declared in the given module's implementation of
-   * hook_crumbs_plugins(), e.g. via $api->routeParentCallback().
-   *
-   * @param string $module
-   */
-  protected function restoreModuleCallbacks($module) {
-    $f = $module . '_crumbs_plugins';
-    if (!function_exists($f)) {
-      // The module may have been disabled in the meantime,
-      // or the function has been removed by a developer.
-      $this->callbacks[$module] = array();
-      return;
-    }
-    $this->discoveryOngoing = TRUE;
-    $this->api->setModule($module);
-    $f($this->api);
-    $this->discoveryOngoing = FALSE;
-    $this->callbacks[$module] = $this->api->getModuleCallbacks($module);
-  }
 }

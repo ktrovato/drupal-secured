@@ -40,5 +40,8 @@ class crumbs_EntityPlugin_Field_TermReference extends crumbs_EntityPlugin_Field_
         }
       }
     }
+
+    return NULL;
   }
+
 }

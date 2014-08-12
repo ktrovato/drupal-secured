@@ -7,14 +7,6 @@
  */
 class crumbs_PluginOperation_describe {
 
-  //                                                                Initial data
-  // ---------------------------------------------------------------------------
-
-  /**
-   * @var array
-   */
-  protected $pluginRoutes;
-
   //                                                              Collected data
   // ---------------------------------------------------------------------------
 
@@ -29,9 +21,10 @@ class crumbs_PluginOperation_describe {
   protected $keysByPlugin = array();
 
   /**
-   * @var array
+   * @var string[][]
+   *   Format: $[$key][] = $description
    */
-  protected $collectedInfo = array();
+  private $descriptions = array();
 
   //                                                             State variables
   // ---------------------------------------------------------------------------
@@ -53,12 +46,11 @@ class crumbs_PluginOperation_describe {
   protected $injectedAPI_multi;
 
   /**
-   * @param array $plugin_routes
+   * The constructor.
    */
-  function __construct($plugin_routes) {
+  function __construct() {
     $this->injectedAPI_mono = new crumbs_InjectedAPI_describeMonoPlugin($this);
     $this->injectedAPI_multi = new crumbs_InjectedAPI_describeMultiPlugin($this);
-    $this->pluginRoutes = $plugin_routes;
   }
 
   /**
@@ -68,46 +60,13 @@ class crumbs_PluginOperation_describe {
   function invoke($plugin, $plugin_key) {
     $this->pluginKey = $plugin_key;
 
-    $basic_methods = array();
-    $route_methods = array();
-    $rf_class = new ReflectionClass($plugin);
-    foreach ($rf_class->getMethods() as $rf_method) {
-      $method = $rf_method->name;
-      $pos = strpos($method, '__');
-      if (FALSE !== $pos && 0 !== $pos) {
-        $method_base = substr($method, 0, $pos);
-        if (in_array($method_base, array('findParent', 'findTitle'))) {
-          $method_suffix = substr($method, $pos + 2);
-          $route = crumbs_Util::routeFromMethodSuffix($method_suffix);
-          $route_methods[$method_base][$route] = $method;
-        }
-      }
-      else {
-        if (in_array($method, array('findParent', 'findTitle', 'decorateBreadcrumb'))) {
-          if (!isset($this->pluginRoutes[$plugin_key])) {
-            $basic_methods[$method] = $method;
-          }
-          else {
-            $route = $this->pluginRoutes[$plugin_key];
-            if (!isset($route_methods[$method][$route])) {
-              $route_methods[$method][$route] = $method;
-            }
-          }
-        }
-      }
-    }
-
     if ($plugin instanceof crumbs_MonoPlugin) {
-      $this->collectedInfo['basicMethods'][$plugin_key] = $basic_methods;
-      $this->collectedInfo['routeMethods'][$plugin_key] = $route_methods;
       $result = $plugin->describe($this->injectedAPI_mono);
       if (is_string($result)) {
         $this->setTitle($result);
       }
     }
     elseif ($plugin instanceof crumbs_MultiPlugin) {
-      $this->collectedInfo['basicMethods']["$plugin_key.*"] = $basic_methods;
-      $this->collectedInfo['routeMethods']["$plugin_key.*"] = $route_methods;
       $result = $plugin->describe($this->injectedAPI_multi);
       if (is_array($result)) {
         foreach ($result as $key_suffix => $title) {
@@ -147,25 +106,11 @@ class crumbs_PluginOperation_describe {
   }
 
   /**
-   * @param array $paths
-   * @param string $key_suffix
-   */
-  function setRoutes(array $paths, $key_suffix) {
-    if (isset($key_suffix)) {
-      $key = $this->pluginKey . '.' . $key_suffix;
-    }
-    else {
-      $key = $this->pluginKey;
-    }
-    $this->collectedInfo['routes'][$key] = $paths;
-  }
-
-  /**
    * @param string $key
    * @param string $description
    */
   protected function _addDescription($key, $description) {
-    $this->collectedInfo['descriptions'][$key][] = $description;
+    $this->descriptions[$key][] = $description;
   }
 
   /**
@@ -223,9 +168,7 @@ class crumbs_PluginOperation_describe {
   function collectedInfo() {
     $container = new crumbs_Container_MultiWildcardData($this->keys);
     $container->__set('key', $this->keys);
-    foreach ($this->collectedInfo as $key => $data) {
-      $container->__set($key, $data);
-    }
+    $container->descriptions = $this->descriptions;
     return $container;
   }
 }

@@ -49,9 +49,12 @@ class crumbs_InjectedAPI_describeMultiPlugin {
   /**
    * @param array $paths
    * @param string $key_suffix
+   *
+   * @deprecated
+   *   This method has no effect.
    */
   function setRoutes(array $paths, $key_suffix = '*') {
-    $this->pluginOperation->setRoutes($paths, $key_suffix);
+    // This method has no effect.
   }
 
   /**

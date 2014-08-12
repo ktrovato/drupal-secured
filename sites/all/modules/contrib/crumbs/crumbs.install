@@ -65,3 +65,10 @@ function crumbs_update_7202() {
   }
   variable_set('crumbs_override_theme_breadcrumb', $overrides_updated);
 }
+
+/**
+ * Flush crumbs plugin cache after refactoring of the plugin system.
+ */
+function crumbs_update_7203() {
+  cache_clear_all('crumbs:', 'cache', TRUE);
+}

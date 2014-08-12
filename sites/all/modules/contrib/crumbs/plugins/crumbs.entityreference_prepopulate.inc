@@ -79,22 +79,22 @@ class entityreference_prepopulate_CrumbsMonoPlugin_node implements crumbs_MonoPl
    */
   function findParent($path, $item) {
     if (empty($_GET[$this->fieldName])) {
-      return;
+      return NULL;
     }
 
     $v = $_GET[$this->fieldName];
     if (!($v > 0)) {
-      return;
+      return NULL;
     }
 
     $target_entities = entity_load($this->targetType, array($v));
     if (empty($target_entities[$v])) {
-      return;
+      return NULL;
     }
 
     $uri = entity_uri($this->targetType, $target_entities[$v]);
     if (empty($uri['path'])) {
-      return;
+      return NULL;
     }
 
     return $uri['path'];

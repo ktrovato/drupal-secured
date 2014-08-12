@@ -1,11 +1,13 @@
 <?php
 
 /**
- * Class crumbs_Container_MultiWildcardDataOffset
+ * Represents a position in the wildcard tree, either at a leaf (candidate)
+ * or at a node (wildcard).
  *
  * @property array $basicMethods
  * @property array $routeMethods
  * @property array $routes
+ * @property array $descriptions
  */
 class crumbs_Container_MultiWildcardDataOffset {
 
@@ -22,6 +24,7 @@ class crumbs_Container_MultiWildcardDataOffset {
   /**
    * @param crumbs_Container_MultiWildcardData $container
    * @param string $key
+   *   Key identifying a position in the wildcard tree, e.g. 'menu.hierarchy.*'.
    */
   function __construct($container, $key) {
     $this->container = $container;
@@ -51,4 +54,5 @@ class crumbs_Container_MultiWildcardDataOffset {
   function getAllMerged($key) {
     return $this->container->__get($key)->getAllMerged($this->key);
   }
+
 }

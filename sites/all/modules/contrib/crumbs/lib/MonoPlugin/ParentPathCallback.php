@@ -56,5 +56,8 @@ class crumbs_MonoPlugin_ParentPathCallback implements crumbs_MonoPlugin_FindPare
     if (!empty($this->callback)) {
       return call_user_func($this->callback, $path, $item);
     }
+
+    return NULL;
   }
+
 }

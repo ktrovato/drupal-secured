@@ -43,5 +43,7 @@ class crumbs_CrumbsMonoPlugin_home_title implements crumbs_MonoPlugin_FindTitleI
       $home_title = variable_get('crumbs_home_link_title', 'Home');
       return t($home_title);
     }
+
+    return NULL;
   }
 }

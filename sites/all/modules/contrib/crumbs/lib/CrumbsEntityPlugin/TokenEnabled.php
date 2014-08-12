@@ -11,7 +11,7 @@ class crumbs_CrumbsEntityPlugin_TokenEnabled extends crumbs_CrumbsEntityPlugin_T
     $patterns = variable_get('crumbs_' . $entity_type . '_parent_patterns', array());
 
     if (empty($patterns[$distinction_key])) {
-      return;
+      return NULL;
     }
 
     // Use token to resolve the pattern.
@@ -29,9 +29,10 @@ class crumbs_CrumbsEntityPlugin_TokenEnabled extends crumbs_CrumbsEntityPlugin_T
     // Only accept candidates where all tokens are fully resolved.
     // This means we can't have literal '[' in the path - so be it.
     if (FALSE !== strpos($parent, '[')) {
-      return;
+      return NULL;
     }
 
     return $parent;
   }
+
 }

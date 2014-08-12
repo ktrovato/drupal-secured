@@ -91,6 +91,7 @@ dependencies[] = content_audit
 dependencies[] = content_security_policy
 dependencies[] = content_security_policy_reporting
 dependencies[] = context_metadata
+dependencies[] = imagecache_token
 dependencies[] = css3pie
 dependencies[] = diff
 dependencies[] = entity
@@ -127,9 +128,9 @@ dependencies[] = custom_secure
 ; Panels
 dependencies[] = panels
 ; Performance and scalability
-dependencies[] = apc
+;dependencies[] = apc
 dependencies[] = entitycache
-dependencies[] = filecache
+;dependencies[] = filecache
 ; Rules
 dependencies[] = rules
 dependencies[] = rules_admin

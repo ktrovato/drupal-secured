@@ -2,7 +2,14 @@
 
 
 /**
- * Form builder callback
+ * Form builder callback for admin/structure/crumbs/entity-parent/$type.
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param string $entity_type
+ *   E.g. 'node' or 'taxonomy_term'.
+ *
+ * @return array
  */
 function crumbs_admin_entity_parent_form($form, &$form_state, $entity_type) {
 

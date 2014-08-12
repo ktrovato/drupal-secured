@@ -65,5 +65,8 @@ class crumbs_EntityPlugin_Callback implements crumbs_EntityPlugin {
     if (!empty($this->callback)) {
       return call_user_func($this->callback, $entity, $entity_type, $distinction_key);
     }
+
+    return NULL;
   }
+
 }

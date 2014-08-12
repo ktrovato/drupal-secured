@@ -18,5 +18,8 @@ class crumbs_EntityPlugin_Field_EntityReference extends crumbs_EntityPlugin_Fiel
         }
       }
     }
+
+    return NULL;
   }
+
 }

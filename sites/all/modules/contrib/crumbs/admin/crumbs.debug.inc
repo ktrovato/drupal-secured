@@ -35,16 +35,32 @@ function crumbs_debug_page() {
 <input type="submit" value="Go" class="form-submit" />
 EOT;
   $input_html = t('Breadcrumb for: !text_field', array('!text_field' => $input_html));
-  $text = <<<EOT
-<p>This page allows to have a look "behind the scenes", so you can analyse
-which crumbs plugins and rules are responsible for the "crumbs parent" to a
-given system path.</p>
-<p>Crumbs will "ask" different plugins, until one of them responds with a parent
-path candidate. The candidate with the highest weight wins.</p>
-<p>Crumbs will stop invoking any more plugins, once it is clear that further
-candidates will only have smaller weights.</p>
+
+  $placeholders = array(
+    '!plugin_weights' => l(t('Plugin weights'), 'admin/structure/crumbs'),
+    '!display_settings' => l(t('Display settings'), 'admin/structure/crumbs/display'),
+  );
+
+  $paragraphs = array();
+  $paragraphs[] = <<<EOT
+This page allows to have a look "behind the scenes", so you can analyse which crumbs plugins and rules are responsible for the "crumbs parent" to a given system path.
 EOT;
-  $text = t($text);
+
+  $paragraphs[] = <<<EOT
+For each breadcrumb item, the Crumbs plugins can suggest candidates for the parent path and the breadcrumb item title.
+Crumbs assigns a weight to each candidate, depending on the !plugin_weights configuration.
+The candidate with the smallest weight wins.
+EOT;
+
+  $paragraphs[] = <<<EOT
+Please note that some items may still be hidden, depending on the !display_settings.
+EOT;
+
+  $text = '';
+  foreach ($paragraphs as $paragraph) {
+    $paragraph = str_replace("\n", '<br/>', $paragraph);
+    $text .= '<p>' . t($paragraph, $placeholders) . '</p>' . "\n";
+  }
 
   $html = <<<EOT
     <form method="get" action="$form_action">
@@ -86,76 +102,36 @@ EOT;
  */
 function _crumbs_admin_debug_matrix($path_to_test) {
 
-  // Create a local version of the service factory.
-  $service_factory = new crumbs_ServiceFactory();
-  $services = new crumbs_Container_LazyServices($service_factory);
-  $candidate_logger = new crumbs_Debug_CandidateLogger();
-  $services->pluginEngine->setCandidateLogger($candidate_logger);
+  // Create a local version of the service container.
+  $services = new crumbs_DIC_ServiceContainer();
   $page_info = $services->page;
-  $page_info->set('path', $path_to_test);
-  // Trigger breadcrumb calculation.
-  $trail = $page_info->trail;
-  $breadcrumb_items = $page_info->rawBreadcrumbItems;
-  $titles = array();
-  foreach ($breadcrumb_items as $item) {
-    $path = $item['link_path'];
-    if (isset($trail[$path]) && isset($item['title'])) {
-      $titles[$path] = $item['title'];
-    }
-  }
+  $page_info->path = $path_to_test;
 
-  list($matrix, $best_cells, $weights) = $candidate_logger->getAsMatrix(array_reverse($trail));
+  // Change the settings so that all breadcrumb items are visible.
+  $page_info->minTrailItems = 1;
+  $page_info->showFrontPage = TRUE;
+  $page_info->showCurrentPage = TRUE;
 
-  $matrix_thead_tr_first = '<td></td><td></td>';
-  $matrix_thead_tr_second = '<td></td><td></td>';
-  $matrix_thead_tr_third = '<th>' . t('Candidate key') . '</th><th>' . t('Weight') . '</th>';
+  $unfilteredPluginBag = new crumbs_PluginSystem_PluginBag(
+    $services->pluginInfo->plugins,
+    $services->pluginInfo->routelessPluginMethodsUnsorted,
+    $services->pluginInfo->routePluginMethodsUnsorted);
 
-  foreach (array_reverse(array_keys($trail)) as $i => $path) {
-    $title = isset($titles[$path]) ? l($titles[$path], $path) : FALSE;
-    $separator = ($i > 0) ? '&laquo;' : ':';
-    $matrix_thead_tr_first .= '<td rowspan="' . (count($matrix) + 3) . '">' . $separator . '</td>';
-    $matrix_thead_tr_third .= '<th>' . t('Title') . '</th>';
+  $unfilteredPluginEngine = new crumbs_PluginSystem_PluginEngine(
+    $unfilteredPluginBag,
+    $services->router,
+    $services->pluginInfo->weightMap);
 
-    if ($i + 1 < count($trail)) {
-      $td_opening = '<td colspan="2"';
-      $path_eff = $path;
-      $matrix_thead_tr_third .= '<th>' . t('Parent') . '</th>';
-    }
-    else {
-      $td_opening = '<td';
-      $path_eff = '<front>';
-    }
+  $table = new crumbs_Admin_DebugTable();
 
-    if (FALSE !== $title) {
-      $matrix_thead_tr_first .= $td_opening . '>' . $title . '</td>';
-      $matrix_thead_tr_second .= $td_opening . '><code>' . check_plain($path_eff) . '</code></td>';
-    }
-    else {
-      $matrix_thead_tr_first .= $td_opening . ' rowspan="2"><strike><code>' . l($path_eff, $path_eff) . '</code></strike></td>';
-    }
-  }
-  $matrix_thead = '<tr>' . $matrix_thead_tr_first . '</tr>';
-  $matrix_thead .= '<tr>' . $matrix_thead_tr_second . '</tr>';
-  $matrix_thead .= '<tr>' . $matrix_thead_tr_third . '</tr>';
+  $table->setTrail(
+    $page_info->trail,
+    $page_info->rawBreadcrumbItems);
 
-  $matrix_tbody = '';
-  $odd = TRUE;
-  foreach ($matrix as $key => $row_cells) {
-    $row_html = '<td>' . $key . '</td><td>' . $weights[$key] . '</td>';
-    foreach ($row_cells as $col_key => $cell) {
-      if (':parent' === substr($col_key, -7)) {
-        $cell = '<code>' . $cell . '</code>';
-      }
-      if (!empty($best_cells[$key][$col_key])) {
-        $cell = '<strong>' . $cell . '</strong>';
-      }
-      $row_html .= '<td>' . $cell . '</td>';
-    }
-    $class = $odd ? 'odd' : 'even';
-    $odd = !$odd;
-    $matrix_tbody .= '<tr class="' . $class . '">' . $row_html . '</tr>';
-  }
+  $table->addPluginResults(
+    $unfilteredPluginEngine,
+    $services->pluginInfo->weightMap);
 
-  $table = '<table>' . $matrix_thead . $matrix_tbody . '</table>';
-  return '<div style="overflow-x: auto;">' . $table . '</div>';
+  $html = $table->render();
+  return '<div style="overflow-x: auto;">' . $html . '</div>';
 }

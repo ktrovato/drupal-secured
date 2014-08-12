@@ -74,6 +74,8 @@ class crumbs_TrailFinder {
     }
     unset($trail_reverse['<front>']);
     $trail_reverse[$front_normal_path] = $front_menu_item;
+
     return array_reverse($trail_reverse);
   }
+
 }

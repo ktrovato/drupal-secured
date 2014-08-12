@@ -10,7 +10,7 @@ interface crumbs_MonoPlugin extends crumbs_PluginInterface {
    *   Injected API object, with methods that allows the plugin to further
    *   describe itself.
    *
-   * @return
+   * @return string|void
    *   As an alternative to the API object's methods, the plugin can simply
    *   return a string label.
    */

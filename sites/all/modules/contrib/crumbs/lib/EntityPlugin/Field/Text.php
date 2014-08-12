@@ -9,5 +9,8 @@ class crumbs_EntityPlugin_Field_Text extends crumbs_EntityPlugin_Field_Abstract 
     foreach ($items as $item) {
       return $item['value'];
     }
+
+    return NULL;
   }
+
 }

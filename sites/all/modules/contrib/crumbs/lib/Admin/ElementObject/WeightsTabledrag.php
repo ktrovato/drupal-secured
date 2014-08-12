@@ -43,10 +43,15 @@ class crumbs_Admin_ElementObject_WeightsTabledrag extends crumbs_Admin_ElementOb
   /**
    * Callback for $element['#process']
    * Create one textfield element per rule.
+   *
+   * @param array $element
+   * @param array $form_state
+   *
+   * @return array
    */
   function process($element, $form_state) {
 
-    // Apologies for the stupid identifiers.
+    /** @var crumbs_PluginSystem_PluginInfo $info */
     $info = $element['#crumbs_plugin_info'];
     $default_weights = $info->defaultWeights;
     $available_keys_meta = $info->availableKeysMeta;

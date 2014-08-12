@@ -32,7 +32,7 @@ interface crumbs_MonoPlugin_example extends crumbs_MonoPlugin {
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string
    *   The parent path suggested by this plugin.
    */
   function findParent($path, $item);
@@ -47,19 +47,19 @@ interface crumbs_MonoPlugin_example extends crumbs_MonoPlugin {
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string
    *   The parent path suggested by this plugin.
    */
   function findParent__node_x($path, $item);
 
   /**
-   * @param $path
+   * @param string $path
    *   System path of the breadcrumb item that we want to find a link text for.
-   * @param $item
+   * @param array $item
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string
    *   A string link text.
    */
   function findTitle($path, $item);
@@ -68,16 +68,17 @@ interface crumbs_MonoPlugin_example extends crumbs_MonoPlugin {
    * Same signature as findTitle()
    * Only called for router path node/%
    *
-   * @param $path
+   * @param string $path
    *   System path of the breadcrumb item that we want to find a link text for.
-   * @param $item
+   * @param array $item
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string
    *   A string link text.
    */
   function findTitle__node_x($path, $item);
+
 }
 
 
@@ -92,13 +93,13 @@ interface crumbs_MonoPlugin_example extends crumbs_MonoPlugin {
 interface crumbs_MultiPlugin_example extends crumbs_MultiPlugin {
 
   /**
-   * @param $path
+   * @param string $path
    *   System path that we want to find a parent for.
-   * @param $item
+   * @param array $item
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string[]
    *   A key-value array, where the keys identify crumbs rules, and the values
    *   are candidates for the parent path.
    *   Rule keys are relative to the plugin key.
@@ -108,17 +109,22 @@ interface crumbs_MultiPlugin_example extends crumbs_MultiPlugin {
   /**
    * Same signature as findParent()
    * Only called for router path node/%
+   *
+   * @param string $path
+   * @param array $item
+   *
+   * @return string[]
    */
   function findParent__node_x($path, $item);
 
   /**
-   * @param $path
+   * @param string $path
    *   System path of the breadcrumb item that we want to find a link text for.
-   * @param $item
+   * @param array $item
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string[]
    *   A key-value array, where the keys identify crumbs rules, and the values
    *   are candidates for the link title.
    *   Rule keys are relative to the plugin key.
@@ -135,10 +141,11 @@ interface crumbs_MultiPlugin_example extends crumbs_MultiPlugin {
    *   Router item, as returned by menu_get_item(), but with a few convenience
    *   additions added in crumbs_get_router_item().
    *
-   * @return
+   * @return string[]
    *   A key-value array, where the keys identify crumbs rules, and the values
    *   are candidates for the link title.
    *   Rule keys are relative to the plugin key.
    */
   function findTitle__node_x($path, $item);
+
 }

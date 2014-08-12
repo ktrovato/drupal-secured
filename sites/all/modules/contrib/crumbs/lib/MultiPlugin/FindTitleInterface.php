@@ -10,7 +10,7 @@ interface crumbs_MultiPlugin_FindTitleInterface extends crumbs_MultiPlugin {
    * @param array $item
    *   Item as returned from crumbs_get_router_item()
    *
-   * @return array
+   * @return string[]
    *   Title candidates
    */
   function findTitle($path, $item);

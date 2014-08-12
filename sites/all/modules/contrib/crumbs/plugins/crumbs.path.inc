@@ -33,5 +33,7 @@ class path_CrumbsMonoPlugin implements crumbs_MonoPlugin_FindParentInterface {
     if ($alias = $item['alias']) {
       return crumbs_reduce_path($alias, 1);
     }
+
+    return NULL;
   }
 }

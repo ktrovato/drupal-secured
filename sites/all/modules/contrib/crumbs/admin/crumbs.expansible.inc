@@ -16,6 +16,8 @@ function theme_crumbs_weights_expansible(&$vars) {
     $cells = array();
     $cells[] = $key;
     $cells[] = render($element[$key]);
+
+    /** @var crumbs_Container_MultiWildcardDataOffset $meta */
     $meta = $element[$key]['#crumbs_rule_info'];
 
     $methods = array();
@@ -39,7 +41,7 @@ function theme_crumbs_weights_expansible(&$vars) {
     $cells[] = '<code class="crumbs-admin-meta">' . implode('<br/>', $routes) . '</code>';
 
     if ($descriptions = $meta->descriptions) {
-      $cells[] = '<div class="crumbs-admin-meta">' . implode('<br/>', $meta->descriptions) . '</div>';
+      $cells[] = '<div class="crumbs-admin-meta">' . implode('<br/>', $descriptions) . '</div>';
     }
     else {
       $cells[] = '';

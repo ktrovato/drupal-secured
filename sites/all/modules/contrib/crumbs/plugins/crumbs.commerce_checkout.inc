@@ -34,11 +34,11 @@ class commerce_checkout_CrumbsMonoPlugin_checkoutPages implements crumbs_MonoPlu
   function findParent($path, $item) {
     // $item['map'][2] should contain the checkout step.
     if (empty($item['map'][2])) {
-      return;
+      return NULL;
     }
     // $item['map'][1] should contain the order.
     if (!is_object($item['map'][1])) {
-      return;
+      return NULL;
     }
     list(, $order, $page) = $item['map'];
     if (!empty($page['prev_page'])) {
@@ -55,10 +55,10 @@ class commerce_checkout_CrumbsMonoPlugin_checkoutPages implements crumbs_MonoPlu
    */
   function findTitle($path, $item) {
     if (empty($item['map'][2]['name'])) {
-      return;
+      return NULL;
     }
     if (!is_object($item['map'][1])) {
-      return;
+      return NULL;
     }
     list(, $order, $page) = $item['map'];
     return t($page['name']);

@@ -20,6 +20,8 @@ class crumbs_Util {
    *   An array of objects used to generate the replacements.
    * @param $options
    *   An array of options used to generate the replacements.
+   *
+   * @see pathauto_clean_token_values()
    */
   static function cleanTokenValues(&$replacements, $data = array(), $options = array()) {
 

@@ -52,6 +52,8 @@ abstract class crumbs_EntityPlugin_Field_Abstract implements crumbs_EntityPlugin
     if (is_array($items) && !empty($items)) {
       return $this->fieldFindCandidate($items);
     }
+
+    return NULL;
   }
 
   /**

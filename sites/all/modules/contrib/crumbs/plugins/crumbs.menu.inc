@@ -181,12 +181,12 @@ class menu_CrumbsMonoPlugin_specialItems implements crumbs_MonoPlugin_FindParent
 
     $menu_link = end($item['map']);
     if (empty($menu_link) || !is_array($menu_link) || empty($menu_link['plid'])) {
-      return;
+      return NULL;
     }
     $parent_link = menu_link_load($menu_link['plid']);
 
     if (empty($parent_link['link_path'])) {
-      return;
+      return NULL;
     }
 
     $parent_path = $parent_link['link_path'];
@@ -195,7 +195,7 @@ class menu_CrumbsMonoPlugin_specialItems implements crumbs_MonoPlugin_FindParent
     }
 
     if ('<separator>' === $parent_path) {
-      return;
+      return NULL;
     }
 
     return $parent_path;

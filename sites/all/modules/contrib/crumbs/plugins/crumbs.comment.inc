@@ -24,6 +24,11 @@ class comment_CrumbsMonoPlugin_reply implements crumbs_MonoPlugin {
    * findParent callback for comment/reply/%.
    * Actually, system paths cam look more like comment/reply/%/%, but the router
    * path is comment/reply/%. Complain to the people who wrote comment module.
+   *
+   * @param string $path
+   * @param array $item
+   *
+   * @return string
    */
   function findParent__comment_reply_x($path, $item) {
     $nid = $item['fragments'][2];
@@ -43,13 +48,21 @@ class comment_CrumbsMonoPlugin_comment implements crumbs_MonoPlugin {
   /**
    * Make node/% the parent for comment/%.
    * This also completes the breadcrumb for other comment/%/* paths.
+   *
+   * @param string $path
+   * @param array $item
+   *
+   * @return string
    */
   function findParent__comment_x($path, $item) {
     $comment = comment_load($item['original_map'][1]);
     if (!empty($comment->nid)) {
       return 'node/' . $comment->nid;
     }
+
+    return NULL;
   }
+
 }
 
 class comment_CrumbsMonoPlugin_skip implements crumbs_MonoPlugin {
@@ -68,7 +81,8 @@ class comment_CrumbsMonoPlugin_skip implements crumbs_MonoPlugin {
    * @param string $path
    * @param array $item
    *
-   * @return FALSE
+   * @return false
+   *   A value of FALSE indicates that the breadcrumb item should be skipped.
    */
   function findTitle__comment_x($path, $item) {
     return FALSE;

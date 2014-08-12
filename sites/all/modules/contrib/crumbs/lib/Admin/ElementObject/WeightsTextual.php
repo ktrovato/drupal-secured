@@ -4,6 +4,12 @@ class crumbs_Admin_ElementObject_WeightsTextual extends crumbs_Admin_ElementObje
 
   /**
    * Callback for $element['#value_callback']
+   *
+   * @param array $element
+   * @param bool $input
+   * @param array $form_state
+   *
+   * @return array|bool
    */
   function value_callback(&$element, $input = FALSE, $form_state = array()) {
 
@@ -11,7 +17,9 @@ class crumbs_Admin_ElementObject_WeightsTextual extends crumbs_Admin_ElementObje
       return isset($element['#default_value']) ? $element['#default_value'] : array();
     }
 
-    $available_keys_meta = $element['#crumbs_plugin_info']->availableKeysMeta;
+    /** @var crumbs_PluginSystem_PluginInfo $info */
+    $info = $element['#crumbs_plugin_info'];
+    $available_keys_meta = $info->availableKeysMeta;
 
     $weights = array();
     $weight = 0;
@@ -38,6 +46,11 @@ class crumbs_Admin_ElementObject_WeightsTextual extends crumbs_Admin_ElementObje
   /**
    * Callback for $element['#process']
    * Create a big textarea.
+   *
+   * @param array $element
+   * @param array $form_state
+   *
+   * @return array
    */
   function process($element, $form_state) {
 
@@ -56,6 +69,10 @@ class crumbs_Admin_ElementObject_WeightsTextual extends crumbs_Admin_ElementObje
 
   /**
    * Get the text for the textarea
+   *
+   * @param array $element
+   *
+   * @return string
    */
   protected function getDefaultText($element) {
 
@@ -142,6 +159,11 @@ class crumbs_Admin_ElementObject_WeightsTextual extends crumbs_Admin_ElementObje
 
   /**
    * This algorithm is copied 1:1 from blockadminlight
+   *
+   * @param array $key_lengths
+   * @param int $factor
+   *
+   * @return int
    */
   protected function findIdealLength(array $key_lengths, $factor = 30) {
     sort($key_lengths, SORT_NUMERIC);

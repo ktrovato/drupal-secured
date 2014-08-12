@@ -30,7 +30,7 @@ class crumbs_example_CrumbsMultiPlugin_ListOfNews implements crumbs_MultiPlugin 
    */
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     if (!empty($node->created)) {
@@ -38,5 +38,7 @@ class crumbs_example_CrumbsMultiPlugin_ListOfNews implements crumbs_MultiPlugin 
       $path = "news/$year/$month/$day";
       return array($node->type => $path);
     }
+
+    return NULL;
   }
 }

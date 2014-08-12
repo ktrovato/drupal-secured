@@ -9,11 +9,29 @@
  * The $page argument on each method is the data cache itself.
  * The argument can be mocked with a simple stdClass, to test the behavior of
  * each method. (if we had the time to write unit tests)
+ *
+ * @property bool $breadcrumbSuppressed
+ * @property array $breadcrumbData
+ * @property array $trail
+ * @property array $rawBreadcrumbItems
+ * @property bool $showCurrentPage
+ * @property bool $trailingSeparator
+ * @property bool $showFrontPage
+ * @property int $minTrailItems
+ * @property string $separator
+ * @property string $separatorSpan
+ * @property int $minVisibleItems
+ * @property array $breadcrumbItems
+ * @property string $breadcrumbHtml
+ * @property string $path
+ *
+ * @see crumbs_Container_AbstractLazyData::__get()
+ * @see crumbs_Container_AbstractLazyData::__set()
  */
-class crumbs_CurrentPageInfo {
+class crumbs_CurrentPageInfo extends crumbs_Container_AbstractLazyData {
 
   /**
-   * @var crumbs_Container_LazyDataByPath
+   * @var crumbs_TrailCache
    */
   protected $trails;
 
@@ -28,7 +46,7 @@ class crumbs_CurrentPageInfo {
   protected $router;
 
   /**
-   * @param crumbs_Container_LazyDataByPath $trails
+   * @param crumbs_TrailCache $trails
    * @param crumbs_BreadcrumbBuilder $breadcrumbBuilder
    * @param crumbs_Router $router
    */
@@ -41,10 +59,11 @@ class crumbs_CurrentPageInfo {
   /**
    * Check if the breadcrumb is to be suppressed altogether.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return bool
+   *
+   * @see crumbs_CurrentPageInfo::$breadcrumbSuppressed
    */
-  function breadcrumbSuppressed($page) {
+  protected function breadcrumbSuppressed() {
     // @todo Make this work!
     return FALSE;
     $existing_breadcrumb = drupal_get_breadcrumb();
@@ -56,28 +75,30 @@ class crumbs_CurrentPageInfo {
   /**
    * Assemble all breadcrumb data.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return array
+   *
+   * @see crumbs_CurrentPageInfo::$breadcrumbData
    */
-  function breadcrumbData($page) {
-    if (empty($page->breadcrumbItems)) {
+  protected function breadcrumbData() {
+    if (empty($this->breadcrumbItems)) {
       return FALSE;
     }
     return array(
-      'trail' => $page->trail,
-      'items' => $page->breadcrumbItems,
-      'html' => $page->breadcrumbHtml,
+      'trail' => $this->trail,
+      'items' => $this->breadcrumbItems,
+      'html' => $this->breadcrumbHtml,
     );
   }
 
   /**
    * Build the Crumbs trail.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return array
+   *
+   * @see crumbs_CurrentPageInfo::$trail
    */
-  function trail($page) {
-    return $this->trails->getForPath($page->path);
+  protected function trail() {
+    return $this->trails->getForPath($this->path);
   }
 
   /**
@@ -90,38 +111,39 @@ class crumbs_CurrentPageInfo {
    *
    * The altering will happen in a separate step, so
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return array
+   *
+   * @see crumbs_CurrentPageInfo::$rawBreadcrumbItems
    */
-  function rawBreadcrumbItems($page) {
-    if ($page->breadcrumbSuppressed) {
+  protected function rawBreadcrumbItems() {
+    if ($this->breadcrumbSuppressed) {
       return array();
     }
     if (user_access('administer crumbs')) {
       // Remember which pages we are visiting,
       // for the autocomplete on admin/structure/crumbs/debug.
-      unset($_SESSION['crumbs.admin.debug.history'][$page->path]);
-      $_SESSION['crumbs.admin.debug.history'][$page->path] = TRUE;
+      unset($_SESSION['crumbs.admin.debug.history'][$this->path]);
+      $_SESSION['crumbs.admin.debug.history'][$this->path] = TRUE;
       // Never remember more than 15 links.
       while (15 < count($_SESSION['crumbs.admin.debug.history'])) {
         array_shift($_SESSION['crumbs.admin.debug.history']);
       }
     }
-    $trail = $page->trail;
-    if (count($trail) < $page->minTrailItems) {
+    $trail = $this->trail;
+    if (count($trail) < $this->minTrailItems) {
       return array();
     }
-    if (!$page->showFrontPage) {
+    if (!$this->showFrontPage) {
       array_shift($trail);
     }
-    if (!$page->showCurrentPage) {
+    if (!$this->showCurrentPage) {
       array_pop($trail);
     }
     if (!count($trail)) {
       return array();
     }
     $items = $this->breadcrumbBuilder->buildBreadcrumb($trail);
-    if (count($items) < $page->minVisibleItems) {
+    if (count($items) < $this->minVisibleItems) {
       // Some items might get lost due to having an empty title.
       return array();
     }
@@ -131,58 +153,64 @@ class crumbs_CurrentPageInfo {
   /**
    * Determine if we want to show the breadcrumb item for the current page.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return bool
+   *
+   * @see crumbs_CurrentPageInfo::$showCurrentPage
    */
-  function showCurrentPage($page) {
+  protected function showCurrentPage() {
     return variable_get('crumbs_show_current_page', FALSE) & ~CRUMBS_TRAILING_SEPARATOR;
   }
 
   /**
-   * @param crumbs_Container_LazyPageData $page
    * @return bool
+   *
+   * @see crumbs_CurrentPageInfo::$trailingSeparator
    */
-  function trailingSeparator($page) {
+  protected function trailingSeparator() {
     return variable_get('crumbs_show_current_page', FALSE) & CRUMBS_TRAILING_SEPARATOR;
   }
 
   /**
    * Determine if we want to show the breadcrumb item for the front page.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return bool
+   *
+   * @see crumbs_CurrentPageInfo::$showFrontPage
    */
-  function showFrontPage($page) {
+  protected function showFrontPage() {
     return variable_get('crumbs_show_front_page', TRUE);
   }
 
   /**
    * If there are fewer trail items than this, we hide the breadcrumb.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return int
+   *
+   * @see crumbs_CurrentPageInfo::$minTrailItems
    */
-  function minTrailItems($page) {
+  protected function minTrailItems() {
     return variable_get('crumbs_minimum_trail_items', 2);
   }
 
   /**
    * Determine separator string, e.g. ' &raquo; ' or ' &gt; '.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return string
+   *
+   * @see crumbs_CurrentPageInfo::$separator
    */
-  function separator($page) {
+  protected function separator() {
     return variable_get('crumbs_separator', ' &raquo; ');
   }
 
   /**
    * Determine separator string, e.g. ' &raquo; ' or ' &gt; '.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return string
+   *
+   * @see crumbs_CurrentPageInfo::$separatorSpan
    */
-  function separatorSpan($page) {
+  protected function separatorSpan() {
     return variable_get('crumbs_separator_span', FALSE);
   }
 
@@ -193,15 +221,16 @@ class crumbs_CurrentPageInfo {
    * - The current page item might be hidden based on a setting.
    * - Any item where the title is FALSE will be hidden / skipped over.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return int
+   *
+   * @see crumbs_CurrentPageInfo::$minVisibleItems
    */
-  function minVisibleItems($page) {
-    $n = $page->minTrailItems;
-    if (!$page->showCurrentPage) {
+  protected function minVisibleItems() {
+    $n = $this->minTrailItems;
+    if (!$this->showCurrentPage) {
       --$n;
     }
-    if (!$page->showFrontPage) {
+    if (!$this->showFrontPage) {
       --$n;
     }
     return $n;
@@ -210,15 +239,16 @@ class crumbs_CurrentPageInfo {
   /**
    * Build altered breadcrumb items.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return array
+   *
+   * @see crumbs_CurrentPageInfo::$breadcrumbItems
    */
-  function breadcrumbItems($page) {
-    $breadcrumb_items = $page->rawBreadcrumbItems;
+  protected function breadcrumbItems() {
+    $breadcrumb_items = $this->rawBreadcrumbItems;
     if (empty($breadcrumb_items)) {
       return array();
     }
-    $router_item = $this->router->getRouterItem($page->path);
+    $router_item = $this->router->getRouterItem($this->path);
     // Allow modules to alter the breadcrumb, if possible, as that is much
     // faster than rebuilding an entirely new active trail.
     drupal_alter('menu_breadcrumb', $breadcrumb_items, $router_item);
@@ -228,23 +258,24 @@ class crumbs_CurrentPageInfo {
   /**
    * Build the breadcrumb HTML.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return string
+   *
+   * @see crumbs_CurrentPageInfo::$breadcrumbHtml
    */
-  function breadcrumbHtml($page) {
-    $breadcrumb_items = $page->breadcrumbItems;
+  protected function breadcrumbHtml() {
+    $breadcrumb_items = $this->breadcrumbItems;
     if (empty($breadcrumb_items)) {
       return '';
     }
     $links = array();
-    if ($page->showCurrentPage) {
+    if ($this->showCurrentPage) {
       $last = array_pop($breadcrumb_items);
       foreach ($breadcrumb_items as $i => $item) {
         $links[$i] = theme('crumbs_breadcrumb_link', $item);
       }
       $links[] = theme('crumbs_breadcrumb_current_page', array(
         'item' => $last,
-        'show_current_page' => $page->showCurrentPage,
+        'show_current_page' => $this->showCurrentPage,
       ));
     }
     else {
@@ -255,20 +286,22 @@ class crumbs_CurrentPageInfo {
     return theme('breadcrumb', array(
       'breadcrumb' => $links,
       'crumbs_breadcrumb_items' => $breadcrumb_items,
-      'crumbs_trail' => $page->trail,
-      'crumbs_separator' => $page->separator,
-      'crumbs_separator_span' => $page->separatorSpan,
-      'crumbs_trailing_separator' => $page->trailingSeparator,
+      'crumbs_trail' => $this->trail,
+      'crumbs_separator' => $this->separator,
+      'crumbs_separator_span' => $this->separatorSpan,
+      'crumbs_trailing_separator' => $this->trailingSeparator,
     ));
   }
 
   /**
    * Determine current path.
    *
-   * @param crumbs_Container_LazyPageData $page
    * @return string
+   *
+   * @see crumbs_CurrentPageInfo::$path
    */
-  function path($page) {
+  protected function path() {
     return $_GET['q'];
   }
+
 }

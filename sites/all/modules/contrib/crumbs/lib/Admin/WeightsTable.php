@@ -6,7 +6,7 @@
 class crumbs_Admin_WeightsTable {
 
   /**
-   * @var crumbs_Container_CachedLazyPluginInfo
+   * @var crumbs_PluginSystem_PluginInfo
    */
   protected $pluginInfo;
 
@@ -26,7 +26,7 @@ class crumbs_Admin_WeightsTable {
   protected $descriptions = array();
 
   /**
-   * @param crumbs_Container_CachedLazyPluginInfo $plugin_info
+   * @param crumbs_PluginSystem_PluginInfo $plugin_info
    */
   function __construct($plugin_info) {
     $this->pluginInfo = $plugin_info;
@@ -108,7 +108,7 @@ class crumbs_Admin_WeightsTable {
         $row = array_slice($row, 0, $cell_offset + 1);
       }
       $rule_key = substr($row_key, 6);
-      $row_weight = $this->pluginInfo->weightKeeper->valueAtKey($rule_key);
+      $row_weight = $this->pluginInfo->weightMap->valueAtKey($rule_key);
       $row[] = is_numeric($row_weight) ? t('!key:&nbsp;!value', array(
         '!key' => t('Weight'),
         '!value' => $row_weight,
@@ -160,9 +160,7 @@ class crumbs_Admin_WeightsTable {
    */
   protected function addRow($section_key, $key, $child) {
 
-    /**
-     * @var crumbs_Container_MultiWildcardDataOffset $meta
-     */
+    /** @var crumbs_Container_MultiWildcardDataOffset $meta */
     $meta = $child['#crumbs_rule_info'];
     $child['weight']['#attributes']['class'][] = 'crumbs-weight-element';
     $title = $child['#title'];
@@ -191,21 +189,16 @@ class crumbs_Admin_WeightsTable {
     $routes = array();
     if (is_array($meta->routeMethods)) {
       foreach ($meta->routeMethods as $method => $method_routes) {
-        foreach ($method_routes as $route => $method_with_suffix) {
+        foreach ($method_routes as $route => $cTrue) {
           $methods[] = $method . '()';
           $routes[] = $route;
         }
       }
     }
-    if (is_array($meta->routes)) {
-      $routes = array_merge($routes, $meta->routes);
-    }
     if (is_array($meta->basicMethods)) {
-      foreach ($meta->basicMethods as $method) {
+      foreach ($meta->basicMethods as $method => $cTrue) {
         $methods[] = $method . '()';
-        if (!is_array($meta->routes)) {
-          $routes[] = '-';
-        }
+        $routes[] = '-';
       }
     }
     $cells[] = '<code>' . implode('<br/>', $methods) . '</code>';

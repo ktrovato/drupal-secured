@@ -41,10 +41,12 @@ class crumbs_Admin_ElementObject_WeightsExpansible extends crumbs_Admin_ElementO
    */
   function process($element, $form_state) {
 
-    // Apologies for the stupid identifiers.
-    $available_keys_meta = $element['#crumbs_plugin_info']->availableKeysMeta;
+    /** @var crumbs_PluginSystem_PluginInfo $info */
+    $info = $element['#crumbs_plugin_info'];
+    $available_keys_meta = $info->availableKeysMeta;
 
     // Set up table rows
+    /** @var crumbs_Container_MultiWildcardDataOffset $meta */
     foreach ($available_keys_meta as $key => $meta) {
       $element[$key] = array(
         '#type' => 'textfield',

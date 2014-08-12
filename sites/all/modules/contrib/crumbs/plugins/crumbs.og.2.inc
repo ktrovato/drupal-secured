@@ -43,12 +43,12 @@ class og_CrumbsMultiPlugin_group_post implements crumbs_MultiPlugin {
    * @param array $item
    *   Loaded router item, as returned from crumbs_get_router_item()
    *
-   * @return array
+   * @return array|null
    *   Parent path candidates
    */
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     // field_get_items() performs a lot faster than og_get_entity_groups().
@@ -64,6 +64,8 @@ class og_CrumbsMultiPlugin_group_post implements crumbs_MultiPlugin {
         return array($node->type => $parent_path);
       }
     }
+
+    return NULL;
   }
 
   /**
@@ -156,17 +158,19 @@ class og_CrumbsMultiPlugin_groups_overview implements crumbs_MultiPlugin {
    * @param array $item
    *   Loaded router item, as returned from crumbs_get_router_item()
    *
-   * @return array
+   * @return array|null
    *   Parent path candidates
    */
   function findParent__node_x($path, $item) {
     if (FALSE === $node = crumbs_Util::itemExtractEntity($item, 'node', 1)) {
-      return;
+      return NULL;
     }
 
     if (og_is_group('node', $node)) {
       return $this->getGroupsOverviewPath($node);
     }
+
+    return NULL;
   }
 
   /**
@@ -187,7 +191,10 @@ class og_CrumbsMultiPlugin_groups_overview implements crumbs_MultiPlugin {
     else {
       return array($group_node->type => $this->groupsOverviewPaths);
     }
+
+    return NULL;
   }
+
 }
 
 /**
@@ -213,5 +220,7 @@ class og_CrumbsMultiPlugin_my_groups_overview extends og_CrumbsMultiPlugin_group
       // Use the parent implementation.
       return parent::getGroupsOverviewPath($group_node);
     }
+
+    return NULL;
   }
 }
