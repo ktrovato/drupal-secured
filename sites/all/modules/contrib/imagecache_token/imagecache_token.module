@@ -1,0 +1,123 @@
+<?php
+
+
+/**
+ * Implementation of hook_token_info().
+ */
+function imagecache_token_token_info() {
+  $styles = image_styles();
+  $styles_tokens = array();
+  $image_style = array();
+
+  foreach ($styles as $style => $desc) {
+    $styles_tokens[$style] = array(
+      'name' => $style,
+      'description' => t("@s image style", array("@s" => $style)),
+      'type' => 'image-style'
+    );
+    foreach(_imagegecache_token_image_attributes() as $attribute => $none) {
+      $image_style[$attribute] = array(
+        'name' => $attribute,
+        'description' => t("@s image style attribute: @a", array("@s" => $style, "@a" => $attribute)),
+      );
+    }
+  }
+
+  return array(
+    'types' => array(
+      'image-field' => array(
+        'name' => 'Image Field',
+        'description' => 'Image Field',
+        'needs-data' => 'image-field',
+      ),
+      'image-style' => array(
+        'name' => 'Image Style',
+        'description' => 'Image Style',
+        'needs-data' => 'image-style',
+      ),
+    ),
+    'tokens' => array(
+      'image-field' => $styles_tokens,
+      'image-style' => $image_style,
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_token_info_alter().
+ */
+function imagecache_token_token_info_alter(&$data) {
+  $fields = field_info_fields();
+
+  foreach ($fields as $field) {
+    if ($field['type'] == 'image') {
+      foreach ($field['bundles'] as $entity_type => $bundles) {
+        $token_type = token_get_entity_mapping('entity', $entity_type);
+        if (!empty($data['tokens'][$token_type][$field['field_name']])) {
+          $data['tokens'][$token_type][$field['field_name']]['type'] = 'image-field';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_tokens().
+ */
+function imagecache_token_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  if ($type == 'entity' && !empty($data['entity'])) {
+    $fields = field_info_fields();
+
+    foreach ($fields as $field) {
+      if ($field['type'] == 'image') {
+        if (($image_field_tokens = token_find_with_prefix($tokens, $field['field_name'])) && $field_object = field_get_items($data['entity_type'], $data['entity'], $field['field_name'])) {
+          $replacements += token_generate('image-field', $image_field_tokens, array('image-field' => $field_object), $options);
+        }
+      }
+    }
+  }
+
+  if ($type == 'image-field' && !empty($data['image-field'])) {
+    foreach ($tokens as $token => $original) {
+      $output = array();
+      foreach ($data['image-field'] as $field) {
+        $explode = explode(':', $token);
+        
+        $type = isset($explode[0]) ? $explode[0] : FALSE;
+        $attribute = isset($explode[1]) ? $explode[1] : FALSE;
+
+        if ($attribute == 'render') {
+          $output[] = theme('image_formatter', array('item' => $field, 'image_style' => $type));
+        }
+        elseif (isset($attribute) && !empty($attribute)) {
+          $output[] = $field[$attribute];
+        }
+        else {
+          $output[] = image_style_url($token, $field['uri']);
+        }
+      }
+      $replacements[$original] = implode(', ', $output);
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Implements _imagegecache_token_image_attributes().
+ *
+ * Helperfunction for getting all available image attributes.
+ */
+function _imagegecache_token_image_attributes() {
+  return array(
+    'style_name' => NULL,
+    'path' => NULL,
+    'width' => NULL,
+    'height' => NULL,
+    'alt' => '',
+    'title' => NULL,
+    'attributes' => array(),
+    'render' => '',
+ );
+}
