@@ -5,9 +5,9 @@ core = 7.x
 ; This allows to put our plugin classes into dedicated folders.
 dependencies[] = xautoload
 
-; Information added by Drupal.org packaging script on 2014-08-04
-version = "7.x-2.0-beta19"
+; Information added by Drupal.org packaging script on 2014-10-02
+version = "7.x-2.2"
 core = "7.x"
 project = "crumbs"
-datestamp = "1407151129"
+datestamp = "1412268252"
 

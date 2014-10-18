@@ -41,6 +41,15 @@ function _crumbs_autoload($class) {
 // -----------------------------------------------------------------------------
 
 /**
+ * Unfortunately, splitting hook_block_view() into another file cannot be
+ * handled with hook_module_implements_alter(), because blocks module uses
+ * module_invoke(), which does not check hook_module_implements_alter().
+ *
+ * See @link https://www.drupal.org/node/2328535
+ */
+require_once dirname(__FILE__) . '/crumbs.block.inc';
+
+/**
  * Implements hook_module_implements_alter()
  *
  * @param string[] $implementations
@@ -59,12 +68,6 @@ function crumbs_module_implements_alter(&$implementations, $hook) {
       $implementations['crumbs'] = 'info';
       break;
 
-    case 'block_info':
-    case 'block_view':
-      // These hook implementations live in crumbs.block.inc
-      $implementations['crumbs'] = 'block';
-      break;
-
     case 'help':
       $implementations['crumbs'] = 'help';
       break;
@@ -74,6 +77,8 @@ function crumbs_module_implements_alter(&$implementations, $hook) {
       break;
 
     default:
+      // Implementation of other hooks is either in the *.module file, or in a
+      // file that is already included, such as crumbs.block.inc.
       return;
   }
 

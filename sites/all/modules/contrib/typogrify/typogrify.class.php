@@ -48,7 +48,7 @@ class Typogrify {
       }
       else {
         $caps = $mthree;
-        $tail = '';
+        $tail = $matchobj[4];
       }
       return sprintf('<span class="caps">%s</span>%s', $caps, $tail);
     }
@@ -79,7 +79,7 @@ class Typogrify {
             [A-Z'\d]*[A-Z])    # Any amount of caps and digits
             | (\b[A-Z]+\.\s?   # OR: Group 3: Some caps, followed by a '.' and an optional space
             (?:[A-Z]+\.\s?)+)  # Followed by the same thing at least once more
-            (?:\s|\b|$))/x";
+            (\s|\b|$|[)}\]>]))/x";
 
     foreach ($tokens as $token) {
       if ( $token[0] == "tag" ) {
@@ -165,17 +165,6 @@ class Typogrify {
                       ((<\/(p|h[1-6]|li|dt|dd)>)|$))          # end with a closing p, h1-6, li or the end of the string
                       /x";
     return preg_replace($widont_finder, '&nbsp;$2', $text);
-  }
-
-  /**
-   * space_to_nbsp
-   *
-   * Replaces the space before a "double punctuation mark" (!?:;) with
-   * ``&nbsp;``
-   * Especially useful in french.
-   */
-  public static function space_to_nbsp($text) {
-    return preg_replace("/\s([\!\?\:;])/", '&nbsp;$1', $text);
   }
 
   /**

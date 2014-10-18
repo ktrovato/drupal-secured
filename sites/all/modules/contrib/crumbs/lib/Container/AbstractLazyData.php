@@ -6,7 +6,7 @@
 abstract class crumbs_Container_AbstractLazyData {
 
   /**
-   * @var array
+   * @var mixed[]
    */
   private $data = array();
 

@@ -16,7 +16,7 @@ class crumbs_PluginSystem_PluginMethodIterator implements Iterator {
   /**
    * The plugin key at the current iterator position.
    *
-   * @var string|false
+   * @var string|null
    */
   private $pluginKey;
 
@@ -28,7 +28,7 @@ class crumbs_PluginSystem_PluginMethodIterator implements Iterator {
   private $pluginMethod;
 
   /**
-   * @var crumbs_PluginSystem_PluginMethodIteratorPosition
+   * @var crumbs_PluginSystem_PluginMethodIteratorPosition|null
    */
   private $iteratorPosition;
 
@@ -55,6 +55,7 @@ class crumbs_PluginSystem_PluginMethodIterator implements Iterator {
 
   /**
    * @return $this
+   * @throws Exception
    */
   function current() {
     return $this->iteratorPosition;
@@ -80,7 +81,8 @@ class crumbs_PluginSystem_PluginMethodIterator implements Iterator {
    *   TRUE, if the current position is valid.
    */
   public function valid() {
-    return NULL !== $this->pluginKey;
+    // @todo Is this sufficient?
+    return NULl !== $this->pluginKey;
   }
 
   /**
@@ -93,10 +95,12 @@ class crumbs_PluginSystem_PluginMethodIterator implements Iterator {
   }
 
   /**
-   * Sets the iterator position. If the given position is not valid, it will
-   * advance from there to the next valid position.
+   * Skips through the array of plugins, until a valid position is found,
+   * starting from the $pluginKey given as an argument.
    *
-   * @param string $pluginKey
+   * @param string|false $pluginKey
+   *   The key returned from either next($this->pluginkeys) or from
+   *   reset($this->pluginKeys). This means the value can be a key or false.
    */
   private function setFirstValidIteratorPosition($pluginKey) {
     while (TRUE) {

@@ -130,11 +130,10 @@ class crumbs_PluginSystem_PluginEngine {
     $best_candidate = NULL;
     $best_candidate_weight = 999999;
     $best_candidate_key = NULL;
-    /**
-     * @var string $plugin_key
-     * @var crumbs_PluginSystem_PluginMethodIterator $position
-     */
     foreach ($iterator as $plugin_key => $position) {
+      if (!$position instanceof crumbs_PluginSystem_PluginMethodIteratorPosition) {
+        continue;
+      }
       if ($position->isMultiPlugin()) {
         $localWeightMap = $this->weightMap->localWeightMap($plugin_key);
         if ($best_candidate_weight <= $localWeightMap->smallestValue()) {
@@ -204,7 +203,7 @@ class crumbs_PluginSystem_PluginEngine {
     $all_candidates = array();
     /**
      * @var string $plugin_key
-     * @var crumbs_PluginSystem_PluginMethodIterator $position
+     * @var crumbs_PluginSystem_PluginMethodIteratorPosition $position
      */
     foreach ($iterator as $plugin_key => $position) {
       if ($position->isMultiPlugin()) {

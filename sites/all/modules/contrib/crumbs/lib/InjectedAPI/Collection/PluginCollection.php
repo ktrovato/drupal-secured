@@ -160,7 +160,7 @@ class crumbs_InjectedAPI_Collection_PluginCollection {
           }
           elseif (0 === strpos($method->name, 'findTitle__')) {
             $baseMethodName = 'findTitle';
-            $methodSuffix = substr($method->name, 12);
+            $methodSuffix = substr($method->name, 11);
           }
           else {
             break;

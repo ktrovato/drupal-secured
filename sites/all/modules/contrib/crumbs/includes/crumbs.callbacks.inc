@@ -22,6 +22,56 @@ function crumbs_special_menu_link_title(array $menu_link) {
   return $menu_link['title'];
 }
 
+/**
+ * Access callback that checks more than one permission with AND.
+ *
+ * Used for admin/structure/crumbs/debug/devel
+ *
+ * @param array $permissions
+ * @param object|null $account
+ *
+ * @return bool
+ */
+function _crumbs_user_access_and(array $permissions, $account = NULL) {
+  foreach ($permissions as $permission) {
+    if (is_string($permission)) {
+      if (!user_access($permission, $account)) {
+        return FALSE;
+      }
+    }
+    elseif (is_array($permission)) {
+      if (!_crumbs_user_access_or($permission, $account)) {
+        return FALSE;
+      }
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Access callback that checks more than one permission with OR.
+ *
+ * @param string[] $permissions
+ * @param object|null $account
+ *
+ * @return bool
+ */
+function _crumbs_user_access_or(array $permissions, $account = NULL) {
+  foreach ($permissions as $permission) {
+    if (is_string($permission)) {
+      if (user_access($permission, $account)) {
+        return TRUE;
+      }
+    }
+    elseif (is_array($permission)) {
+      if (_crumbs_user_access_and($permission, $account)) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
 
 // Form element callbacks
 // -----------------------------------------------------------------------------

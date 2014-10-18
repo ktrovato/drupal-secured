@@ -32,17 +32,38 @@ function views_crumbs_plugins($api) {
       // Not really a views display, too few arguments.
       continue;
     }
-    list($view_name, $view_display_id) = $args;
+    list($view_name, $view_display_ids) = $args;
+    if (!is_string($view_name)) {
+      // Not really a views display, wrong type of arguments.
+      continue;
+    }
+    // The second argument is usually just a string identifying the display id.
+    // However, it can also be an array of display ids.
+    // @see view::choose_display()
+    // Unfortunately, it can also be complete junk.
+    // @see https://www.drupal.org/node/2316873#comment-9037925
+    if (!is_array($view_display_ids)) {
+      $view_display_ids = array($view_display_ids);
+    }
 
     if ('%' !== substr($row->path, -1)) {
       // The path does not end with "%", so the title should not depend on a
       // contextual filter.
-      $staticDisplays[$view_name][$view_display_id][] = $row->path;
+      foreach ($view_display_ids as $view_display_id) {
+        if (!is_string($view_display_id)) {
+          continue;
+        }
+        $staticDisplays[$view_name][$view_display_id][] = $row->path;
+      }
     }
     else {
       // This is a views display with contextual filters.
-      # $staticDisplays[$view_name][$view_display_id][] = $row->path;
-      $dynamicDisplays[$view_name][$view_display_id][] = $row->path;
+      foreach ($view_display_ids as $view_display_id) {
+        if (!is_string($view_display_id)) {
+          continue;
+        }
+        $dynamicDisplays[$view_name][$view_display_id][] = $row->path;
+      }
     }
   }
 

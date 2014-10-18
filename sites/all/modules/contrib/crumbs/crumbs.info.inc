@@ -51,6 +51,21 @@ function crumbs_menu() {
     'weight' => 20,
     'type' => MENU_LOCAL_TASK,
   );
+  if (module_exists('devel')) {
+    $items["$base/debug/plugins"] = array(
+      'title' => 'Plugin results',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
+    $items["$base/debug/devel"] = array(
+      'title' => 'Devel',
+      'page callback' => '_crumbs_debug_devel_page',
+      'access callback' => '_crumbs_user_access_and',
+      'access arguments' => array(array('administer crumbs', 'access devel information')),
+      'file' => 'admin/crumbs.debug.inc',
+      'type' => MENU_LOCAL_TASK,
+    );
+  }
 
   foreach (array(
     'node' => 'Node',
