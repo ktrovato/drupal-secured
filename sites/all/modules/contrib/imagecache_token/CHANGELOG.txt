@@ -1,0 +1,12 @@
+Imagecache_Token 7.x-1.x-dev, xxxx-xx-xx
+----------------------------------------
+Initial commit.
+#1525210 by merlinofchaos, s1l: Added Tokens for images on Entities.
+By Hydra: Documentation cleanup.
+By Hydra: Remove unnecessary image instance definition in hook_token_info_alter.
+By Hydra: Make it possible to get all image attributes trough a token.
+#1775294 by osopolar: Added Token to render the complete img-tag (not only url).
+By DamienMcKenna: Added a CHANGELOG.txt file.
+By DamienMcKenna: Updated README.txt file.
+#2365049 by DamienMcKenna: Support for the 'file' field type.
+#1600266 by j0rd, DamienMcKenna: Added the 'uri' attribute.

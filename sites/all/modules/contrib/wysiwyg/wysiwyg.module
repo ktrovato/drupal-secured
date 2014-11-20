@@ -727,6 +727,9 @@ function wysiwyg_profile_cache_clear() {
  * Implements hook_form_FORM_ID_alter().
  */
 function wysiwyg_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#user_category'] != 'account') {
+    return;
+  }
   $account = $form['#user'];
   $user_formats = filter_formats($account);
   $options = array();

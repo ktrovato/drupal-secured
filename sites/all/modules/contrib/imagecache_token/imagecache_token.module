@@ -50,7 +50,7 @@ function imagecache_token_token_info_alter(&$data) {
   $fields = field_info_fields();
 
   foreach ($fields as $field) {
-    if ($field['type'] == 'image') {
+    if ($field['type'] == 'image' || $field['type'] == 'file') {
       foreach ($field['bundles'] as $entity_type => $bundles) {
         $token_type = token_get_entity_mapping('entity', $entity_type);
         if (!empty($data['tokens'][$token_type][$field['field_name']])) {
@@ -70,7 +70,7 @@ function imagecache_token_tokens($type, $tokens, array $data = array(), array $o
     $fields = field_info_fields();
 
     foreach ($fields as $field) {
-      if ($field['type'] == 'image') {
+      if ($field['type'] == 'image' || $field['type'] == 'file') {
         if (($image_field_tokens = token_find_with_prefix($tokens, $field['field_name'])) && $field_object = field_get_items($data['entity_type'], $data['entity'], $field['field_name'])) {
           $replacements += token_generate('image-field', $image_field_tokens, array('image-field' => $field_object), $options);
         }
@@ -94,7 +94,14 @@ function imagecache_token_tokens($type, $tokens, array $data = array(), array $o
           $output[] = $field[$attribute];
         }
         else {
-          $output[] = image_style_url($token, $field['uri']);
+          $uri = '';
+          if (!empty($field['uri'])) {
+            $uri = $field['uri'];
+          }
+          elseif ($file = file_load($field['fid'])) {
+            $uri = $file->uri;
+          }
+          $output[] = !empty($uri) ? image_style_url($token, $uri) : '';
         }
       }
       $replacements[$original] = implode(', ', $output);
@@ -119,5 +126,6 @@ function _imagegecache_token_image_attributes() {
     'title' => NULL,
     'attributes' => array(),
     'render' => '',
+    'uri' => '',
  );
 }
