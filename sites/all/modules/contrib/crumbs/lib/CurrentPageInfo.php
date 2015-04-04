@@ -200,7 +200,7 @@ class crumbs_CurrentPageInfo extends crumbs_Container_AbstractLazyData {
    * @see crumbs_CurrentPageInfo::$separator
    */
   protected function separator() {
-    return variable_get('crumbs_separator', ' &raquo; ');
+    return filter_xss_admin(variable_get('crumbs_separator', ' &raquo; '));
   }
 
   /**

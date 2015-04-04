@@ -3,8 +3,6 @@
   inspiration by http://www.blueprintcss.org/ reset.css and typography.css
 */
 
-/* fonts from ELMS Style Guide */
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,300);
 /*
 font-family: 'Open Sans', sans-serif;
 */
@@ -51,9 +49,21 @@ article.node, div.node {
   }
 }
 
-p, article.node li, article.node p, article.node p, div.node p {
-  font-family: 'Open Sans', serif;
+article.node {
   font-size: 1.3em;
+}
+
+p,
+article.node li,
+article.node li ol li,
+article.node li ul li,
+article.node li ol li ol li,
+article.node li ol li ul li,
+article.node li ul li ul li,
+article.node li ul li ol li,
+article.node p,
+div.node p {
+  font-family: 'Open Sans', serif;
   line-height: 1.7em;
 }
 

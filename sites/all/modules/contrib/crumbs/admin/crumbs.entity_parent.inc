@@ -83,7 +83,9 @@ EOT;
       $form['crumbs_' . $entity_type . '_parent_patterns'][$bundle_key] = array(
         '#title' => t($bundle['label']),
         '#description' => t('Crumbs parent path for !plural of type "!bundle_label" (!bundle_key)', array(
-          '!plural' => t($info['plural label']),
+          '!plural' => isset($info['plural label'])
+            ? t($info['plural label'])
+            : t('!type entities', array('!type' => t($info['label']))),
           '!bundle_label' => t($bundle['label']),
           '!bundle_key' => $bundle_key,
         )),

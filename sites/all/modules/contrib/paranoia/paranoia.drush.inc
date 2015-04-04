@@ -9,14 +9,15 @@
  * Implements hook_drush_command().
  */
 function paranoia_drush_sql_sync_sanitize($site) {
-  // We don't use DBTNG here so this stays (roughly) working across old versions of Drupal
+  // Don't use DBTNG here so this mostly workis across old versions of Drupal.
   drush_sql_register_post_sync_op('flood',
     dt('Delete all flood table entries (contains IP address and event).'),
     "TRUNCATE flood;");
   drush_sql_register_post_sync_op('sessions',
     dt('Delete all sessions table entries (contains IP address and potentially sensitive arbitrary session data).'),
     "TRUNCATE sessions;");
-  // This is a bit rough, the intent is to remove things like an API key: i.e. credentials for using services.
+  // This next one is a bit harsh.
+  // The intent is to remove things like API keys or credentials for services.
   drush_sql_register_post_sync_op('variable_keys',
     dt('Remove variables that contain names that indicate potential sensitive data.'),
     "DELETE FROM variable WHERE name LIKE '%key%';");
@@ -43,4 +44,4 @@ function paranoia_drush_sql_sync_sanitize($site) {
     dt('Blocked users were deleted, now lets delete their associated roles.'),
     "DELETE users_roles FROM users_roles LEFT JOIN users ON users_roles.uid = users.uid WHERE users.uid IS NULL;");
   // @TODO truncate all cache* tables.
- }
+}

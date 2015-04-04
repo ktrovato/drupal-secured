@@ -5,9 +5,9 @@ package = "Textbook"
 core = "7.x"
 project = "textbook"
 
-; Information added by Drupal.org packaging script on 2014-06-09
-version = "7.x-4.1"
+; Information added by Drupal.org packaging script on 2015-03-17
+version = "7.x-4.2"
 core = "7.x"
 project = "textbook"
-datestamp = "1402320233"
+datestamp = "1426557782"
 

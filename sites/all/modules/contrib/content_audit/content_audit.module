@@ -1,8 +1,24 @@
 <?php
 
 /**
+ * @file
+ * Main module file for content audit.
+ */
+
+/**
  * Implements hook_views_api().
  */
 function content_audit_views_api() {
   return array('api' => 3.0);
+}
+
+/**
+ * Implements hook_permission().
+ */
+function content_audit_permission() {
+  return array(
+    'access content audit' => array(
+      'title' => t('Access content audit'),
+    ),
+  );
 }

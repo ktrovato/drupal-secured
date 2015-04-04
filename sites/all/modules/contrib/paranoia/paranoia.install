@@ -17,7 +17,28 @@ function paranoia_enable() {
     drupal_set_message(t('The Paranoia module has disabled the PHP module.'));
   }
 
-  // Manually remove any enabled risky permissions
+  // Manually remove any enabled risky permissions.
   _paranoia_remove_risky_permissions();
-  drupal_set_message(t('Risky permissions have been automatically disabled.'));
+  $t = get_t();
+  drupal_set_message($t('Risky permissions have been automatically disabled.'));
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function paranoia_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    // Ensure the PHP module is not enabled.
+    if (module_exists('php')) {
+      $t = get_t();
+      $requirements['paranoia_php'] = array(
+        'title' => $t('Paranoia'),
+        'description' => $t('The PHP module is enabled. This module should be disabled (but paranoia module prevents it from showing in the module admin form).  It may have been enabled in the database, circumventing the effectiveness of paranoia module.'),
+        'severity' => REQUIREMENT_ERROR,
+        'value' => '',
+      );
+    }
+  }
+  return $requirements;
 }

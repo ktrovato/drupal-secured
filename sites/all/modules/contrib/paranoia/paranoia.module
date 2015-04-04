@@ -27,7 +27,7 @@ function paranoia_form_system_modules_alter(&$form, &$form_state) {
       unset($form['modules'][$package][$module]);
     }
   }
-  // Invoke custom validation function to disable banned modules on submit
+  // Invoke custom validation function to disable banned modules on submit.
   $form['#validate'][] = 'paranoia_module_validate';
 }
 
@@ -41,7 +41,6 @@ function paranoia_form_views_ui_config_item_form_alter(&$form, &$form_state) {
     $form['options']['vbo']['operations']['action::views_bulk_operations_script_action']['selected']['#default_value'] = FALSE;
     $form['options']['vbo']['operations']['action::views_bulk_operations_script_action']['selected']['#value'] = FALSE;
     $form['options']['vbo']['operations']['action::views_bulk_operations_script_action']['selected']['#disabled'] = TRUE;
-
   }
 }
 
@@ -63,24 +62,6 @@ function paranoia_form_user_profile_form_alter(&$form, &$form_state) {
 }
 
 /**
- * Implements hook_requirements().
- */
-function paranoia_requirements($phase) {
-  $requirements = array();
-  if ($phase == 'runtime') {
-    // Ensure the PHP module is not enabled.
-    if (module_exists('php')) {
-      $requirements['paranoia_php'] = array(
-        'title' => t('Paranoia'),
-        'description' => t('The PHP module is enabled. This module should be disabled (but paranoia module prevents it from showing in the module admin form).  It may have been enabled in the database, circumventing the effectiveness of paranoia module.'),
-        'severity' => REQUIREMENT_ERROR,
-        );
-    }
-  }
-  return $requirements;
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Hides permissions considered risky by hook_paranoia_hide_permissions().
@@ -93,7 +74,7 @@ function paranoia_form_user_admin_permissions_alter(&$form, &$form_state) {
     }
     foreach ($form['checkboxes'] as $index => $elements) {
       if (isset($elements['#options'][$permission])) {
-       unset($form['checkboxes'][$index]['#options'][$permission]);
+        unset($form['checkboxes'][$index]['#options'][$permission]);
       }
     }
   }
@@ -102,10 +83,9 @@ function paranoia_form_user_admin_permissions_alter(&$form, &$form_state) {
 }
 
 /**
- * Form validate function to prevent granting risky permissions to
- * anonymous/authenticated roles.
+ * Form validation prevents granting permissions to untrusted roles.
  *
- * @see paranoia_form_user_admin_permissions_alter().
+ * @see paranoia_form_user_admin_permissions_alter()
  */
 function paranoia_permissions_validate($form, &$form_state) {
   $permissions = module_invoke_all('permission');
@@ -175,6 +155,7 @@ function paranoia_paranoia_hide_modules() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of rules.module.
  */
 function rules_paranoia_hide_permissions() {
@@ -183,6 +164,7 @@ function rules_paranoia_hide_permissions() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of cck.module.
  */
 function cck_paranoia_hide_permissions() {
@@ -191,6 +173,7 @@ function cck_paranoia_hide_permissions() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of devel.module.
  */
 function devel_paranoia_hide_permissions() {
@@ -199,6 +182,7 @@ function devel_paranoia_hide_permissions() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of googleanalytics.module.
  */
 function googleanalytics_paranoia_hide_permissions() {
@@ -207,6 +191,7 @@ function googleanalytics_paranoia_hide_permissions() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of bueditor.module.
  */
 function bueditor_paranoia_hide_permissions() {
@@ -215,6 +200,7 @@ function bueditor_paranoia_hide_permissions() {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of auto_nodetitle.module.
  */
 function auto_nodetitle_paranoia_hide_permissions() {
@@ -237,6 +223,7 @@ function paranoia_module_validate($form, &$form_state) {
 
 /**
  * Implements hook_paranoia_hide_permissions().
+ *
  * On behalf of visual_website_optimizer.module.
  */
 function visual_website_optimizer_paranoia_hide_permissions() {
@@ -244,9 +231,10 @@ function visual_website_optimizer_paranoia_hide_permissions() {
 }
 
 /**
-  * Implements hook_paranoia_hide_permissions().
-  * On behalf of live_person.module.
-  */
+ * Implements hook_paranoia_hide_permissions().
+ *
+ * On behalf of live_person.module.
+ */
 function live_person_paranoia_hide_permissions() {
   return array('use PHP for live person visibility');
 }
