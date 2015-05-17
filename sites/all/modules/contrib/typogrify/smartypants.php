@@ -644,7 +644,11 @@ function _typogrify_number_replacer($hit, $thbl) {
     // Date -`dd.mm.yyyy don't touch.
     return $hit[5];
   }
-  $dec = preg_replace('/[+-]?\d{1,3}(?=(\d{3})+(?!\d))/', '\0' . $thbl, $hit[6]);
+  if (preg_match('/[+-]?\d{5,}/', $hit[6]) == 1) {
+    $dec = preg_replace('/[+-]?\d{1,3}(?=(\d{3})+(?!\d))/', '\0' . $thbl, $hit[6]);
+  } else {
+    $dec = $hit[6];
+  }
   $frac = preg_replace('/\d{3}/', '\0' . $thbl, $hit[7]);
   return '<span class="number">' . $dec . $frac . '</span>';
 }
@@ -1115,7 +1119,7 @@ function typogrify_space_to_nbsp($text) {
     else {
       $t = $cur_token[1];
       if (!$in_pre) {
-        $t = preg_replace("/\s([\!\?\:;])/", '&nbsp;$2', $t);
+        $t = preg_replace("/\s([\!\?\:;])/", '&nbsp;$1', $t);
       }
       $result .= $t;
     }
