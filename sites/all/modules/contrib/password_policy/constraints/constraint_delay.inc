@@ -2,11 +2,11 @@
 
 /**
  * @file
- * Password policy constraint callback to set a minimum delay between password
- * changes.
+ * Constraint callback to set a minimum delay between password changes.
  *
- * @link http://drupal.org/node/316765
- * @author David Kent Norman (http://deekayen.net/)
+ * @link https://drupal.org/node/316765
+ *
+ * @author David Kent Norman (https://deekayen.net/)
  */
 
 /****************************************************************************/
@@ -45,7 +45,7 @@ function password_policy_constraint_delay_validate($password, $constraint, $acco
 
   if ($last_change) {
     // Constraint is set in hours, so it gets converted to seconds with *60*60.
-    return time() - ($constraint * 60 * 60) > $last_change;
+    return _password_policy_get_request_time() - ($constraint * 60 * 60) > $last_change;
   }
   return TRUE;
 }

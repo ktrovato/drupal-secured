@@ -83,7 +83,7 @@ function session_limit_menu() {
     'access callback' => 'user_is_logged_in',
     'type' => MENU_SUGGESTED_ITEM,
   );
-  $items['admin/config/people/session_limit'] = array(
+  $items['admin/config/people/session-limit'] = array(
     'title' => 'Session limit',
     'description' => 'Configure session limits.',
     'page callback' => 'drupal_get_form',
@@ -98,7 +98,7 @@ function session_limit_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['admin/config/people/session_limit/roles'] = array(
+  $items['admin/config/people/session-limit/roles'] = array(
     'title' => 'Role limits',
     'description' => 'Configure session limits by role.',
     'page callback' => 'drupal_get_form',
@@ -106,7 +106,7 @@ function session_limit_menu() {
     'access arguments' => array('administer session limits by role'),
     'type' => MENU_LOCAL_TASK,
   );
-  $items['user/%user/session_limit'] = array(
+  $items['user/%user/session-limit'] = array(
     'title' => 'Session limit',
     'description' => 'Configure session limit for one user.',
     'page callback' => 'drupal_get_form',
@@ -312,7 +312,9 @@ function session_limit_user_view($account, $view_mode) {
     $account->content['session_limit'] = array(
       '#title' => t('Session limit'),
       '#type' => 'user_profile_category',
-      'session_limit' => array('#value' => empty($account->data['session_limit']) ? t('Default') : $account->data['session_limit'])
+      'session_limit' => array(
+        '#markup' => empty($account->data['session_limit']) ? t('Default') : $account->data['session_limit'],
+      )
     );
   }
 }
@@ -487,12 +489,14 @@ function session_limit_user_max_sessions_byrole($account) {
   $limits = array();
 
   foreach ($account->roles as $rid => $name) {
-    $limits[] = variable_get("session_limit_rid_$rid", 0);
+    $role_limit = variable_get("session_limit_rid_$rid", FALSE);
+
+    if (!empty($role_limit)) {
+      $limits[] = (int) $role_limit;
+    }
   }
 
-  rsort($limits);
-
-  return (int) $limits[0];
+  return empty($limits) ? 0 : max($limits);
 }
 
 /**
@@ -554,7 +558,7 @@ function session_limit_invoke_session_limit($session, $op) {
       if ($limit > 0) {
         // Secure session ids are seperate rows in the database, but we don't want to kick
         // the user off there http session and not there https session or vice versa. This
-        // is why this query is DISTINCT. 
+        // is why this query is DISTINCT.
         $result = db_select('sessions', 's')
           ->distinct()
           ->fields('s', array('sid'))
@@ -664,4 +668,32 @@ function _session_limit_bypass() {
   }
 
   return FALSE;
+}
+
+/**
+ * Implements hook_variable_group_info().
+ */
+function session_limit_variable_group_info() {
+  $groups['session_limit'] = array(
+    'title' => t('Session limit'),
+    'access' => 'administer site configuration',
+    'path' => array('admin/config/people/session_limit/defaults'),
+  );
+  return $groups;
+}
+
+/**
+ * Implements hook_variable_info().
+ */
+function session_limit_variable_info($options) {
+  $variables['session_limit_logged_out_message'] = array(
+    'title' => t('Logged out message', array(), $options),
+    'description' =>  t('The message that is displayed to a user if the workstation has been logged out.<br />
+      @number is replaced with the maximum number of simultaneous sessions.', array(), $options),
+    'type' => 'string',
+    'localize' => TRUE,
+    'group' => 'session_limit',
+  );
+
+  return $variables;
 }

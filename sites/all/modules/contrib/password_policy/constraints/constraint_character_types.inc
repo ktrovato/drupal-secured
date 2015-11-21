@@ -11,21 +11,21 @@
 /**
  * Description of the constraint.
  */
-function password_policy_constraint_complexity_description() {
-  return array('name' => t('Complexity'), 'description' => t('Password must contain the specified minimum number of character types (lowercase, uppercase, digit or punctuation).'));
+function password_policy_constraint_character_types_description() {
+  return array('name' => t('Character types'), 'description' => t('Password must contain the specified minimum number of character types (lowercase, uppercase, digit or punctuation).'));
 }
 
 /**
  * Error message of the constraint.
  */
-function password_policy_constraint_complexity_error($constraint) {
-  return format_plural($constraint, 'Password must contain at least one character of the following types: lowercase, uppercase, digit or punctuation.', 'Password must contain at least @count characters of different types (lowercase, uppercase, digit or punctuation).');
+function password_policy_constraint_character_types_error($constraint) {
+  return format_plural($constraint, 'Password must contain characters of at least one of the following types: lowercase, uppercase, digit or punctuation.', 'Password must contain characters of at least @count different types (lowercase, uppercase, digit or punctuation).');
 }
 
 /**
  * Password validation.
  */
-function password_policy_constraint_complexity_validate($password, $constraint, $account) {
+function password_policy_constraint_character_types_validate($password, $constraint, $account) {
   $chars = drupal_strlen($password);
   $num = 0;
   $upper = 0;
@@ -54,7 +54,7 @@ function password_policy_constraint_complexity_validate($password, $constraint, 
 /**
  * Javascript portion.
  */
-function password_policy_constraint_complexity_js($constraint, $account) {
+function password_policy_constraint_character_types_js($constraint, $account) {
   return <<<JS
 
     var i = 0;
@@ -85,7 +85,7 @@ function password_policy_constraint_complexity_js($constraint, $account) {
     num = upper + lower + digit + punct;
     if (num < $constraint) {
       strength = "low";
-      msg.push(translate.constraint_complexity);
+      msg.push(translate.constraint_character_types);
     }
 JS;
 }
